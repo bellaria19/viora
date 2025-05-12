@@ -51,13 +51,10 @@ const defaultTextViewerOptions: TextViewerOptions = {
 const defaultPDFViewerOptions: PDFViewerOptions = {
   viewMode: 'page',
   enableRTL: false,
-  pageSpacing: 0,
-  showPageNumbers: true,
   enableCache: true,
   enableDoubleTapZoom: true,
-  showLoadingIndicator: true,
-  showThumbnails: false,
   theme: 'light',
+  lastPage: 1,
 };
 
 const defaultImageViewerOptions: ImageViewerOptions = {
@@ -145,7 +142,11 @@ export const ViewerSettingsProvider: React.FC<ViewerSettingsProviderProps> = ({ 
         // PDF 뷰어 설정
         const pdfSettings = await AsyncStorage.getItem(PDF_VIEWER_KEY);
         if (pdfSettings) {
-          setPDFViewerOptions((prev) => ({ ...prev, ...JSON.parse(pdfSettings) }));
+          setPDFViewerOptions((prev) => {
+            const loaded = JSON.parse(pdfSettings);
+            const { showPageNumbers, ...rest } = loaded;
+            return { ...prev, ...rest, lastPage: rest.lastPage ?? 1 };
+          });
         }
 
         // 이미지 뷰어 설정

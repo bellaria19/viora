@@ -30,23 +30,31 @@ export interface ZipImageViewerOptions extends ImageViewerOptions {
 
 // PDF 뷰어 옵션
 export interface PDFViewerOptions extends BaseViewerOptions {
-  // 뷰어 모드 설정
+  /**
+   * 뷰어 모드 (페이지별 보기/스크롤 보기)
+   * 'page': 한 페이지씩 넘김, 'scroll': 전체 스크롤
+   */
   viewMode: 'scroll' | 'page';
+
+  /**
+   * RTL(오른쪽→왼쪽) 읽기 지원
+   */
   enableRTL: boolean;
 
-  // 페이지 표시 설정
-  pageSpacing: number;
-  showPageNumbers: boolean;
-
-  // 성능 설정
+  /**
+   * PDF 캐시 사용 여부
+   */
   enableCache: boolean;
 
-  // 확대/축소 설정
+  /**
+   * 더블탭 확대/축소 기능 사용 여부
+   */
   enableDoubleTapZoom: boolean;
 
-  // 화면 표시 설정
-  showLoadingIndicator: boolean;
-  showThumbnails: boolean;
+  /**
+   * 최근 본 페이지 (자동 저장/복원용, UI 노출 X)
+   */
+  lastPage?: number;
 }
 
 // 텍스트 뷰어 옵션

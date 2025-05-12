@@ -1,10 +1,10 @@
+import Overlay from '@/components/common/Overlay';
 import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
 import Pdf from 'react-native-pdf';
-import Overlay from '../common/Overlay';
 
 interface PDFViewerProps {
   uri: string;
@@ -17,24 +17,52 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const pdfRef = useRef<any>(null);
   const navigation = useNavigation();
-
-  // PDF 뷰어 설정
   const { pdfViewerOptions, updatePDFViewerOptions } = useViewerSettings();
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    pdfRef.current?.setPage(page);
-  };
+  // 최근 본 페이지 복원
+  useEffect(() => {
+    if (pdfViewerOptions.lastPage && pdfViewerOptions.lastPage > 0) {
+      setCurrentPage(pdfViewerOptions.lastPage);
+    }
+  }, [pdfViewerOptions.lastPage]);
 
-  // 설정에 따른 PDF 속성 계산
+  // 페이지 변경 핸들러
+  const handlePageChange = useCallback(
+    (page: number) => {
+      setCurrentPage(page);
+      pdfRef.current?.setPage(page);
+      updatePDFViewerOptions({ lastPage: page });
+    },
+    [updatePDFViewerOptions],
+  );
+
+  // PDF 로드 완료 시 최근 페이지로 이동
+  const handleLoadComplete = useCallback(
+    (numberOfPages: number) => {
+      setTotalPages(numberOfPages);
+      if (pdfRef.current && currentPage > 1) {
+        pdfRef.current.setPage(currentPage);
+      }
+    },
+    [currentPage],
+  );
+
+  // 옵션 변경 핸들러
+  const handleOptionChange = useCallback(
+    (key: string, value: any) => {
+      updatePDFViewerOptions({ [key]: value });
+    },
+    [updatePDFViewerOptions],
+  );
+
+  // PDF 뷰어 옵션 계산
   const pdfHorizontal = pdfViewerOptions.viewMode === 'page';
-  const pdfSpacing = pdfViewerOptions.pageSpacing;
   const pdfEnablePaging = pdfViewerOptions.viewMode === 'page';
 
-  // SectionList 데이터 구조 정의
+  // 설정 섹션 데이터
   const sections: SettingsSection[] = [
     {
-      title: '뷰어 모드',
+      title: '보기 모드',
       data: [
         {
           key: 'viewMode',
@@ -46,38 +74,17 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             { value: 'scroll', label: '스크롤', icon: 'scroll' },
           ],
         },
-      ],
-    },
-    {
-      title: '페이지 설정',
-      data: [
         {
-          key: 'pageSpacing',
-          type: 'slider',
-          value: pdfViewerOptions.pageSpacing,
-          label: '페이지 간격',
-          min: 0,
-          max: 20,
-          step: 1,
-          unit: 'px',
-        },
-        {
-          key: 'showPageNumbers',
+          key: 'enableRTL',
           type: 'switch',
-          value: pdfViewerOptions.showPageNumbers,
-          label: '페이지 번호 표시',
+          value: pdfViewerOptions.enableRTL,
+          label: 'RTL 방향 (오른쪽에서 왼쪽)',
         },
       ],
     },
     {
-      title: '성능 설정',
+      title: '조작 및 확대',
       data: [
-        {
-          key: 'enableCache',
-          type: 'switch',
-          value: pdfViewerOptions.enableCache,
-          label: '캐시 사용',
-        },
         {
           key: 'enableDoubleTapZoom',
           type: 'switch',
@@ -87,38 +94,17 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
       ],
     },
     {
-      title: '화면 표시 설정',
+      title: '성능',
       data: [
         {
-          key: 'showLoadingIndicator',
+          key: 'enableCache',
           type: 'switch',
-          value: pdfViewerOptions.showLoadingIndicator,
-          label: '로딩 표시',
-        },
-        {
-          key: 'showThumbnails',
-          type: 'switch',
-          value: pdfViewerOptions.showThumbnails,
-          label: '썸네일 표시',
-        },
-      ],
-    },
-    {
-      title: '기타 설정',
-      data: [
-        {
-          key: 'enableRTL',
-          type: 'switch',
-          value: pdfViewerOptions.enableRTL,
-          label: 'RTL 방향 (오른쪽에서 왼쪽)',
+          value: pdfViewerOptions.enableCache,
+          label: '캐시 사용',
         },
       ],
     },
   ];
-
-  const handleOptionChange = (key: string, value: any) => {
-    updatePDFViewerOptions({ [key]: value });
-  };
 
   return (
     <>
@@ -130,12 +116,12 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             style={styles.pdf}
             enablePaging={pdfEnablePaging}
             horizontal={pdfHorizontal}
-            spacing={pdfSpacing}
             onPageChanged={(page, numberOfPages) => {
               setCurrentPage(page);
               setTotalPages(numberOfPages);
+              updatePDFViewerOptions({ lastPage: page });
             }}
-            onLoadComplete={(numberOfPages) => setTotalPages(numberOfPages)}
+            onLoadComplete={handleLoadComplete}
             enableRTL={pdfViewerOptions.enableRTL}
             enableDoubleTapZoom={pdfViewerOptions.enableDoubleTapZoom}
           />
@@ -150,8 +136,6 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
           />
         </View>
       </TouchableWithoutFeedback>
-
-      {/* 설정 바텀 시트 */}
       <SettingsBottomSheet
         title="PDF 설정"
         isVisible={settingsVisible}
