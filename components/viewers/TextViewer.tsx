@@ -18,13 +18,12 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// 상단 오버레이 높이 (paddingTop)
-const PADDING_TOP_HEIGHT = 40;
-const PADDING_BOTTOM_HEIGHT = 40;
+// 상수 정의 - SafeAreaView를 사용하므로 패딩 필요 없음
+const OVERLAY_HEIGHT = 48; // Overlay 컴포넌트의 높이 (대략적인 값)
 
 interface TextViewerProps {
   uri: string;
@@ -82,70 +81,116 @@ export default function TextViewer({ uri }: TextViewerProps) {
       return;
     }
 
-    // 페이지당 글자 수 계산 (폰트 크기와 화면 크기에 따라 조정)
-    const fontSize = textViewerOptions.fontSize;
-    const lineHeight = textViewerOptions.lineHeight;
-    const marginHorizontal = textViewerOptions.marginHorizontal;
-    const marginVertical = textViewerOptions.marginVertical;
+    try {
+      // 폰트 크기 및 화면 크기 기반 계산
+      const fontSize = textViewerOptions.fontSize;
+      const lineHeight = textViewerOptions.lineHeight;
+      const marginHorizontal = textViewerOptions.marginHorizontal;
+      const marginVertical = textViewerOptions.marginVertical;
 
-    // SafeArea와 Overlay topBar 영역을 제외한 실제 사용 가능한 높이 계산
-    const availableHeight = SCREEN_HEIGHT - insets.top - PADDING_TOP_HEIGHT - PADDING_BOTTOM_HEIGHT;
+      // 화면에 표시할 수 있는 텍스트 양 계산
+      // 한 줄당 글자 수 × 화면에 표시할 수 있는 줄 수
+      const avgCharWidth = fontSize * 0.55;
+      const contentWidth = SCREEN_WIDTH - marginHorizontal * 2;
+      const charsPerLine = Math.floor(contentWidth / avgCharWidth);
 
-    // 화면에 표시할 수 있는 텍스트의 근사치 계산
-    const charPerLine = Math.floor((SCREEN_WIDTH - marginHorizontal * 2) / (fontSize * 0.6));
-    const linesPerPage = Math.floor(
-      (availableHeight - marginVertical * 2) / (fontSize * lineHeight),
-    );
-    const charsPerPage = charPerLine * linesPerPage * 0.85; // 85%만 사용하여 여유 공간 확보
+      const contentHeight = SCREEN_HEIGHT - marginVertical * 2;
+      const lineHeightPx = fontSize * lineHeight;
+      const linesPerPage = Math.floor(contentHeight / lineHeightPx);
 
-    // 텍스트 분할
-    const pageTexts: Page[] = [];
-    let remainingText = content;
-    let pageIndex = 0;
+      // 페이지당 글자 수 계산
+      const charsPerPage = charsPerLine * linesPerPage * 0.9; // 10% 여유 공간
 
-    while (remainingText.length > 0) {
-      let pageEnd = Math.min(remainingText.length, charsPerPage);
+      console.log(
+        `페이지당 글자 수: ${charsPerPage} (줄당 ${charsPerLine}글자 × ${linesPerPage}줄 × 0.9)`,
+      );
 
-      // 페이지 끝에서 단어 중간에 자르지 않도록 조정
-      if (pageEnd < remainingText.length) {
-        // 가장 가까운 공백이나 줄바꿈 찾기
-        const lastSpace = remainingText.lastIndexOf(' ', pageEnd);
-        const lastNewline = remainingText.lastIndexOf('\n', pageEnd);
-        const cutPoint = Math.max(lastSpace, lastNewline);
+      // 글자 단위로 페이지 분할
+      const pageTexts: Page[] = [];
+      let remainingText = content;
+      let pageIndex = 0;
 
-        if (cutPoint > 0) {
-          pageEnd = cutPoint + 1; // 공백 또는 줄바꿈 이후
+      while (remainingText.length > 0) {
+        let pageEnd = Math.min(remainingText.length, charsPerPage);
+
+        // 페이지의 끝이 단어 중간에 있지 않도록 조정
+        if (pageEnd < remainingText.length) {
+          // 가장 가까운 줄바꿈이나 공백 찾기
+          const lastNewLine = remainingText.lastIndexOf('\n', pageEnd);
+          const lastSpace = remainingText.lastIndexOf(' ', pageEnd);
+
+          // 줄바꿈과 공백 중 페이지 끝에 더 가까운 것 선택
+          let cutPoint = -1;
+
+          // 공백이 있고 페이지 끝에서 합리적인 거리에 있다면 해당 위치에서 자르기
+          if (lastSpace > 0 && pageEnd - lastSpace < 100) {
+            cutPoint = lastSpace;
+          }
+
+          // 줄바꿈이 있고 공백보다 페이지 끝에 더 가깝다면 해당 위치에서 자르기
+          if (lastNewLine > 0 && (cutPoint === -1 || lastNewLine > lastSpace)) {
+            cutPoint = lastNewLine;
+          }
+
+          // 적합한 자르기 위치가 있다면 페이지 끝 조정
+          if (cutPoint > 0) {
+            pageEnd = cutPoint + 1; // 공백이나 줄바꿈 다음 위치
+          }
         }
+
+        // 현재 페이지의 텍스트 추출
+        const pageText = remainingText.substring(0, pageEnd);
+
+        // 페이지 객체 생성 및 추가
+        pageTexts.push({
+          index: pageIndex++,
+          text: pageText,
+        });
+
+        // 남은 텍스트 업데이트
+        remainingText = remainingText.substring(pageEnd);
+
+        // 남은 텍스트가 빈 공백이나 줄바꿈으로 시작한다면 제거
+        remainingText = remainingText.replace(/^[\s\n]+/, '');
       }
 
-      pageTexts.push({
-        index: pageIndex++,
-        text: remainingText.substring(0, pageEnd),
-      });
+      console.log(`총 ${pageTexts.length}페이지로 분할됨 (총 ${content.length}자)`);
 
-      remainingText = remainingText.substring(pageEnd);
-    }
+      // 각 페이지의 글자 수 확인 (디버깅용)
+      if (__DEV__) {
+        pageTexts.forEach((page, idx) => {
+          console.log(`페이지 ${idx + 1}: ${page.text.length}자`);
+        });
+      }
 
-    setPages(pageTexts);
-    setTotalPages(pageTexts.length);
+      setPages(pageTexts);
+      setTotalPages(pageTexts.length);
 
-    // 저장된 마지막 페이지 확인
-    if (
-      textViewerOptions.lastPage &&
-      textViewerOptions.lastPage > 0 &&
-      textViewerOptions.lastPage <= pageTexts.length
-    ) {
-      setCurrentPage(textViewerOptions.lastPage);
-      // FlatList가 렌더링된 후 해당 페이지로 스크롤
-      setTimeout(() => {
-        if (flatListRef.current) {
-          flatListRef.current.scrollToIndex({
-            index: textViewerOptions.lastPage ? textViewerOptions.lastPage - 1 : 0,
-            animated: false,
-          });
-        }
-      }, 100);
-    } else {
+      // 저장된 마지막 페이지 확인
+      if (
+        textViewerOptions.lastPage &&
+        textViewerOptions.lastPage > 0 &&
+        textViewerOptions.lastPage <= pageTexts.length
+      ) {
+        setCurrentPage(textViewerOptions.lastPage);
+        // FlatList가 렌더링된 후 해당 페이지로 스크롤
+        setTimeout(() => {
+          if (flatListRef.current) {
+            flatListRef.current.scrollToIndex({
+              index: textViewerOptions.lastPage ? textViewerOptions.lastPage - 1 : 0,
+              animated: false,
+            });
+          }
+        }, 100);
+      } else {
+        setCurrentPage(1);
+      }
+    } catch (error) {
+      console.error('텍스트 분할 오류:', error);
+      // 오류 발생 시 단순 분할 방식으로 폴백
+      const simplePages = [{ index: 0, text: content }];
+      setPages(simplePages);
+      setTotalPages(1);
       setCurrentPage(1);
     }
   }, [
@@ -155,9 +200,31 @@ export default function TextViewer({ uri }: TextViewerProps) {
     textViewerOptions.marginHorizontal,
     textViewerOptions.marginVertical,
     textViewerOptions.lastPage,
-    insets.top,
-    insets.bottom,
   ]);
+
+  // 페이지 내용 검증 함수
+  const verifyPageContent = useCallback(
+    (pages: Page[]) => {
+      if (pages.length < 2) return; // 페이지가 하나뿐이면 검증 필요 없음
+
+      // 모든 페이지의 텍스트 길이 합계
+      const totalCharsInPages = pages.reduce((total, page) => total + page.text.length, 0);
+
+      // 내용 누락 확인 (원본 텍스트의 95% 이상이 페이지에 포함되어야 함)
+      if (totalCharsInPages < content.length * 0.95) {
+        console.warn(
+          `페이지 내용 검증 실패: 원본 ${content.length}글자, 페이지 합계 ${totalCharsInPages}글자`,
+        );
+
+        // 누락된 글자 수
+        const missingChars = content.length - totalCharsInPages;
+        console.warn(
+          `약 ${missingChars}글자가 누락됨 (${((missingChars / content.length) * 100).toFixed(2)}%)`,
+        );
+      }
+    },
+    [content],
+  );
 
   useEffect(() => {
     loadTextContent();
@@ -173,6 +240,13 @@ export default function TextViewer({ uri }: TextViewerProps) {
     textViewerOptions.marginHorizontal,
     textViewerOptions.marginVertical,
   ]);
+
+  // 페이지 분할 후 검증
+  useEffect(() => {
+    if (pages.length > 0) {
+      verifyPageContent(pages);
+    }
+  }, [pages, verifyPageContent]);
 
   // 페이지 변경 처리
   const handlePageChange = useCallback(
@@ -299,12 +373,12 @@ export default function TextViewer({ uri }: TextViewerProps) {
         data: [
           {
             key: 'fontSize',
-            type: 'slider',
+            type: 'stepper',
             value: textViewerOptions.fontSize,
             label: '글자 크기',
-            min: 12,
-            max: 28,
-            step: 1,
+            min: 16,
+            max: 34,
+            step: 2,
             unit: 'px',
           },
         ],
@@ -314,7 +388,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         data: [
           {
             key: 'lineHeight',
-            type: 'slider',
+            type: 'stepper',
             value: textViewerOptions.lineHeight,
             label: '줄 간격',
             min: 1.0,
@@ -328,7 +402,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         data: [
           {
             key: 'marginHorizontal',
-            type: 'slider',
+            type: 'stepper',
             value: textViewerOptions.marginHorizontal,
             label: '여백',
             min: 8,
@@ -371,9 +445,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
             {
               width: SCREEN_WIDTH,
               paddingHorizontal: textViewerOptions.marginHorizontal,
-              paddingTop: insets.top + PADDING_TOP_HEIGHT + textViewerOptions.marginVertical,
-              paddingBottom:
-                insets.bottom + PADDING_BOTTOM_HEIGHT + textViewerOptions.marginVertical,
+              paddingVertical: textViewerOptions.marginVertical,
               backgroundColor: themeStyles.backgroundColor,
             },
           ]}
@@ -388,9 +460,17 @@ export default function TextViewer({ uri }: TextViewerProps) {
                 color: themeStyles.textColor,
               },
             ]}
+            allowFontScaling={false}
+            testID={`page-${item.index}`} // 디버깅을 위한 테스트 ID 추가
           >
             {item.text}
           </Text>
+          {/* 디버깅용 페이지 번호 표시 */}
+          {__DEV__ && (
+            <Text style={styles.debugPageNumber}>
+              Page {item.index + 1}/{totalPages}
+            </Text>
+          )}
         </View>
       );
     },
@@ -402,44 +482,47 @@ export default function TextViewer({ uri }: TextViewerProps) {
       textViewerOptions.lineHeight,
       themeStyles.backgroundColor,
       themeStyles.textColor,
-      insets.top,
-      insets.bottom,
+      totalPages,
     ],
   );
 
   if (loading) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
-        <ActivityIndicator size="large" color="#2196F3" />
-        <Text style={[styles.statusText, { color: themeStyles.textColor }]}>
-          텍스트 파일을 불러오는 중...
-        </Text>
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
+        <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={[styles.statusText, { color: themeStyles.textColor }]}>
+            텍스트 파일을 불러오는 중...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
-        <Text style={[styles.statusText, { color: themeStyles.textColor, marginBottom: 20 }]}>
-          {error}
-        </Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadTextContent}>
-          <Text style={styles.retryText}>다시 시도</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.retryButton, { backgroundColor: '#757575', marginTop: 10 }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.retryText}>돌아가기</Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
+        <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
+          <Text style={[styles.statusText, { color: themeStyles.textColor, marginBottom: 20 }]}>
+            {error}
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadTextContent}>
+            <Text style={styles.retryText}>다시 시도</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.retryButton, { backgroundColor: '#757575', marginTop: 10 }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.retryText}>돌아가기</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
   }
 
   // 이제 스크롤 모드 렌더링이 불필요하므로 항상 페이지 모드로 렌더링
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={[styles.container, { backgroundColor: themeStyles.backgroundColor }]}>
           <GestureDetector gesture={swipeGesture}>
@@ -494,7 +577,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         sections={sections}
         onOptionChange={handleOptionChange}
       />
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -537,5 +620,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+  },
+  debugPageNumber: {
+    position: 'absolute',
+    right: 10,
+    bottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    color: 'white',
+    padding: 4,
+    borderRadius: 4,
+    fontSize: 10,
   },
 });

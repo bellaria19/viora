@@ -20,14 +20,14 @@ import {
 // 옵션 타입 정의
 export interface SettingOption {
   key: string;
-  type: 'button-group' | 'slider' | 'switch' | 'color-group';
+  type: 'button-group' | 'slider' | 'switch' | 'color-group' | 'stepper';
   value: any;
   label?: string;
   options?: { value: any; label: string; icon?: string }[]; // button-group, color-group
-  min?: number; // slider
-  max?: number; // slider
-  step?: number; // slider
-  unit?: string; // slider
+  min?: number; // slider, stepper
+  max?: number; // slider, stepper
+  step?: number; // slider, stepper
+  unit?: string; // slider, stepper
   colorOptions?: string[]; // color-group
   icon?: string; // button-group
 }
@@ -158,6 +158,52 @@ export default function SettingsBottomSheet({
                   {color === 'transparent' && <FontAwesome6 name="slash" size={16} color="#ddd" />}
                 </TouchableOpacity>
               ))}
+            </View>
+          </View>
+        );
+      case 'stepper':
+        return (
+          <View style={styles.stepperRow}>
+            <Text style={styles.stepperLabel}>{item.label}</Text>
+            <View style={styles.stepperControl}>
+              <TouchableOpacity
+                style={styles.stepperButton}
+                onPress={() =>
+                  onOptionChange(
+                    item.key,
+                    Math.max(
+                      item.min ?? 0,
+                      Math.round((item.value - (item.step ?? 1)) * 1000) / 1000,
+                    ),
+                  )
+                }
+                disabled={item.value <= (item.min ?? 0)}
+              >
+                <Text style={styles.stepperButtonText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.stepperValue}>
+                {/* px 대신 1~10 단계로 표시, 단 lineHeight와 marginHorizontal는 실제 값 그대로 */}
+                {item.key === 'lineHeight' || item.key === 'marginHorizontal'
+                  ? item.value + (item.unit ?? '')
+                  : item.min !== undefined && item.max !== undefined && item.step !== undefined
+                    ? Math.round((item.value - item.min) / item.step) + 1
+                    : item.value}
+              </Text>
+              <TouchableOpacity
+                style={styles.stepperButton}
+                onPress={() =>
+                  onOptionChange(
+                    item.key,
+                    Math.min(
+                      item.max ?? 100,
+                      Math.round((item.value + (item.step ?? 1)) * 1000) / 1000,
+                    ),
+                  )
+                }
+                disabled={item.value >= (item.max ?? 100)}
+              >
+                <Text style={styles.stepperButtonText}>+</Text>
+              </TouchableOpacity>
             </View>
           </View>
         );
@@ -337,5 +383,44 @@ const styles = StyleSheet.create({
         elevation: 10,
       },
     }),
+  },
+  stepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 12,
+  },
+  stepperLabel: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  stepperControl: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f2f2f2',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  stepperButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#e0e0e0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  stepperButtonText: {
+    fontSize: 20,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  stepperValue: {
+    fontSize: 16,
+    color: '#333',
+    minWidth: 40,
+    textAlign: 'center',
   },
 });
