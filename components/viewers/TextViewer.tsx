@@ -4,29 +4,48 @@ import { FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import * as Haptics from 'expo-haptics';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  ScrollView,
+  Dimensions,
+  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface TextViewerProps {
   uri: string;
 }
 
+interface Page {
+  index: number;
+  text: string;
+}
+
 export default function TextViewer({ uri }: TextViewerProps) {
   const [content, setContent] = useState('');
+  const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const flatListRef = useRef<FlatList>(null);
   const navigation = useNavigation();
   const { textViewerOptions, updateTextViewerOptions } = useViewerSettings();
+
+  // 스와이프 애니메이션 변수
+  const swipeTranslateX = useSharedValue(0);
+  const isSwipeInProgress = useSharedValue(false);
 
   // 텍스트 파일 불러오기
   // UTF-8만 지원
@@ -49,9 +68,179 @@ export default function TextViewer({ uri }: TextViewerProps) {
     }
   }, [uri]);
 
+  // 페이지로 분할하기
+  const splitIntoPages = useCallback(() => {
+    if (!content) {
+      setPages([{ index: 0, text: content }]);
+      setTotalPages(1);
+      return;
+    }
+
+    // 페이지당 글자 수 계산 (폰트 크기와 화면 크기에 따라 조정)
+    const fontSize = textViewerOptions.fontSize;
+    const lineHeight = textViewerOptions.lineHeight;
+    const marginHorizontal = textViewerOptions.marginHorizontal;
+    const marginVertical = textViewerOptions.marginVertical;
+
+    // 화면에 표시할 수 있는 텍스트의 근사치 계산
+    const charPerLine = Math.floor((SCREEN_WIDTH - marginHorizontal * 2) / (fontSize * 0.6));
+    const linesPerPage = Math.floor((SCREEN_HEIGHT - marginVertical * 2) / (fontSize * lineHeight));
+    const charsPerPage = charPerLine * linesPerPage * 0.85; // 85%만 사용하여 여유 공간 확보
+
+    // 텍스트 분할
+    const pageTexts: Page[] = [];
+    let remainingText = content;
+    let pageIndex = 0;
+
+    while (remainingText.length > 0) {
+      let pageEnd = Math.min(remainingText.length, charsPerPage);
+
+      // 페이지 끝에서 단어 중간에 자르지 않도록 조정
+      if (pageEnd < remainingText.length) {
+        // 가장 가까운 공백이나 줄바꿈 찾기
+        const lastSpace = remainingText.lastIndexOf(' ', pageEnd);
+        const lastNewline = remainingText.lastIndexOf('\n', pageEnd);
+        const cutPoint = Math.max(lastSpace, lastNewline);
+
+        if (cutPoint > 0) {
+          pageEnd = cutPoint + 1; // 공백 또는 줄바꿈 이후
+        }
+      }
+
+      pageTexts.push({
+        index: pageIndex++,
+        text: remainingText.substring(0, pageEnd),
+      });
+
+      remainingText = remainingText.substring(pageEnd);
+    }
+
+    setPages(pageTexts);
+    setTotalPages(pageTexts.length);
+
+    // 저장된 마지막 페이지 확인
+    if (
+      textViewerOptions.lastPage &&
+      textViewerOptions.lastPage > 0 &&
+      textViewerOptions.lastPage <= pageTexts.length
+    ) {
+      setCurrentPage(textViewerOptions.lastPage);
+      // FlatList가 렌더링된 후 해당 페이지로 스크롤
+      setTimeout(() => {
+        if (flatListRef.current) {
+          flatListRef.current.scrollToIndex({
+            index: textViewerOptions.lastPage ? textViewerOptions.lastPage - 1 : 0,
+            animated: false,
+          });
+        }
+      }, 100);
+    } else {
+      setCurrentPage(1);
+    }
+  }, [
+    content,
+    textViewerOptions.fontSize,
+    textViewerOptions.lineHeight,
+    textViewerOptions.marginHorizontal,
+    textViewerOptions.marginVertical,
+    textViewerOptions.lastPage,
+  ]);
+
   useEffect(() => {
     loadTextContent();
   }, [loadTextContent]);
+
+  useEffect(() => {
+    splitIntoPages();
+  }, [
+    splitIntoPages,
+    content,
+    textViewerOptions.fontSize,
+    textViewerOptions.lineHeight,
+    textViewerOptions.marginHorizontal,
+    textViewerOptions.marginVertical,
+  ]);
+
+  // 페이지 변경 처리
+  const handlePageChange = useCallback(
+    (page: number) => {
+      if (page < 1 || page > totalPages) {
+        return;
+      }
+
+      setCurrentPage(page);
+
+      if (flatListRef.current) {
+        flatListRef.current.scrollToIndex({
+          index: page - 1,
+          animated: false,
+        });
+      }
+
+      // 마지막 페이지 저장
+      updateTextViewerOptions({ lastPage: page });
+    },
+    [totalPages, updateTextViewerOptions],
+  );
+
+  // 스크롤 이벤트 핸들러
+  const handleScroll = useCallback(
+    (event: any) => {
+      const offsetX = event.nativeEvent.contentOffset.x;
+      const page = Math.floor(offsetX / SCREEN_WIDTH) + 1;
+
+      if (page !== currentPage) {
+        setCurrentPage(page);
+        updateTextViewerOptions({ lastPage: page });
+      }
+    },
+    [currentPage, updateTextViewerOptions],
+  );
+
+  // 스와이프 제스처
+  const swipeGesture = Gesture.Pan()
+    .onBegin(() => {
+      isSwipeInProgress.value = true;
+      swipeTranslateX.value = 0;
+    })
+    .onUpdate((e) => {
+      if (isSwipeInProgress.value) {
+        // 첫 페이지에서 오른쪽으로 스와이프하거나 마지막 페이지에서 왼쪽으로 스와이프할 때 저항 추가
+        if (
+          (currentPage === 1 && e.translationX > 0) ||
+          (currentPage === totalPages && e.translationX < 0)
+        ) {
+          swipeTranslateX.value = e.translationX * 0.3;
+        } else {
+          swipeTranslateX.value = e.translationX;
+        }
+      }
+    })
+    .onEnd((e) => {
+      if (isSwipeInProgress.value) {
+        isSwipeInProgress.value = false;
+
+        // 스와이프 효과로 페이지 변경
+        if (e.translationX < -80 && currentPage < totalPages) {
+          // 진동 효과
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          runOnJS(handlePageChange)(currentPage + 1);
+        } else if (e.translationX > 80 && currentPage > 1) {
+          // 진동 효과
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          runOnJS(handlePageChange)(currentPage - 1);
+        }
+
+        swipeTranslateX.value = 0;
+      }
+    });
+
+  // 애니메이션 스타일
+  const pageAnimStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: swipeTranslateX.value }],
+    };
+  });
 
   // 테마 스타일 useMemo로 최적화
   const themeStyles = useMemo(() => {
@@ -159,6 +348,48 @@ export default function TextViewer({ uri }: TextViewerProps) {
     [updateTextViewerOptions],
   );
 
+  // 페이지 렌더링 함수
+  const renderPage = useCallback(
+    ({ item }: { item: Page }) => {
+      return (
+        <View
+          style={[
+            styles.pageContainer,
+            {
+              width: SCREEN_WIDTH,
+              paddingHorizontal: textViewerOptions.marginHorizontal,
+              paddingVertical: textViewerOptions.marginVertical,
+              backgroundColor: themeStyles.backgroundColor,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.text,
+              {
+                fontFamily: textViewerOptions.fontFamily,
+                fontSize: textViewerOptions.fontSize,
+                lineHeight: textViewerOptions.fontSize * textViewerOptions.lineHeight,
+                color: themeStyles.textColor,
+              },
+            ]}
+          >
+            {item.text}
+          </Text>
+        </View>
+      );
+    },
+    [
+      textViewerOptions.marginHorizontal,
+      textViewerOptions.marginVertical,
+      textViewerOptions.fontFamily,
+      textViewerOptions.fontSize,
+      textViewerOptions.lineHeight,
+      themeStyles.backgroundColor,
+      themeStyles.textColor,
+    ],
+  );
+
   if (loading) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
@@ -189,37 +420,53 @@ export default function TextViewer({ uri }: TextViewerProps) {
     );
   }
 
+  // 이제 스크롤 모드 렌더링이 불필요하므로 항상 페이지 모드로 렌더링
   return (
     <>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={[styles.container, { backgroundColor: themeStyles.backgroundColor }]}>
-          <ScrollView
-            style={[
-              styles.scrollView,
-              {
-                paddingHorizontal: textViewerOptions.marginHorizontal,
-                paddingVertical: textViewerOptions.marginVertical,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.text,
-                {
-                  fontFamily: textViewerOptions.fontFamily,
-                  fontSize: textViewerOptions.fontSize,
-                  lineHeight: textViewerOptions.fontSize * textViewerOptions.lineHeight,
-                  color: themeStyles.textColor,
-                },
-              ]}
-            >
-              {content}
-            </Text>
-          </ScrollView>
+          <GestureDetector gesture={swipeGesture}>
+            <Animated.View style={[styles.container, pageAnimStyle]}>
+              <FlatList
+                ref={flatListRef}
+                data={pages}
+                renderItem={renderPage}
+                keyExtractor={(item) => `page-${item.index}`}
+                horizontal
+                pagingEnabled
+                bounces={false}
+                showsHorizontalScrollIndicator={false}
+                initialScrollIndex={currentPage - 1}
+                getItemLayout={(_, index) => ({
+                  length: SCREEN_WIDTH,
+                  offset: SCREEN_WIDTH * index,
+                  index,
+                })}
+                onMomentumScrollEnd={handleScroll}
+                scrollEnabled={!isSwipeInProgress.value}
+                onScrollToIndexFailed={() => {
+                  // 초기 스크롤 실패 시 한 번 더 시도
+                  setTimeout(() => {
+                    if (flatListRef.current) {
+                      flatListRef.current.scrollToIndex({
+                        index: 0,
+                        animated: false,
+                      });
+                    }
+                  }, 100);
+                }}
+              />
+            </Animated.View>
+          </GestureDetector>
+
           <Overlay
             visible={overlayVisible}
             onBack={() => navigation.goBack()}
             onSettings={() => setSettingsVisible(true)}
+            showSlider={totalPages > 1}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
           />
         </View>
       </TouchableWithoutFeedback>
@@ -242,6 +489,11 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     padding: 16,
+  },
+  pageContainer: {
+    padding: 16,
+    justifyContent: 'flex-start',
+    height: SCREEN_HEIGHT,
   },
   text: {
     fontSize: 16,
@@ -269,31 +521,5 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
-  },
-  quickEncodingSelector: {
-    position: 'absolute',
-    top: 100,
-    right: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 8,
-    padding: 8,
-    alignItems: 'center',
-  },
-  quickEncodingButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginVertical: 4,
-    borderRadius: 4,
-    width: '100%',
-  },
-  quickEncodingButtonSelected: {
-    backgroundColor: '#2196F3',
-  },
-  quickEncodingText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  quickEncodingTextSelected: {
-    fontWeight: 'bold',
   },
 });

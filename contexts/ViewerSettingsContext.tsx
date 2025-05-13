@@ -46,6 +46,7 @@ const defaultTextViewerOptions: TextViewerOptions = {
   backgroundColor: '#fff',
   marginHorizontal: 16,
   marginVertical: 16,
+  lastPage: 1,
 };
 
 const defaultPDFViewerOptions: PDFViewerOptions = {

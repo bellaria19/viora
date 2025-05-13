@@ -408,6 +408,14 @@ export default function SettingsScreen() {
                 style={[styles.button, item.value === opt.value && styles.buttonActive]}
                 onPress={() => handleOptionChange(item.key, opt.value, item.viewer)}
               >
+                {opt.icon && (
+                  <FontAwesome6
+                    name={opt.icon}
+                    size={16}
+                    color={item.value === opt.value ? '#fff' : colors.secondaryText}
+                    style={{ marginRight: 6 }}
+                  />
+                )}
                 <Text
                   style={[styles.buttonText, item.value === opt.value && styles.buttonTextActive]}
                 >
@@ -508,6 +516,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   button: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 8,

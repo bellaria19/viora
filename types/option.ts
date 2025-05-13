@@ -21,14 +21,6 @@ export interface ImageViewerOptions extends BaseViewerOptions {
   backgroundColor: string;
 }
 
-// ZIP 이미지 뷰어 옵션
-export interface ZipImageViewerOptions extends ImageViewerOptions {
-  sortImagesBy: 'name' | 'date' | 'size';
-  autoPlayEnabled: boolean;
-  autoPlayInterval: number; // 초 단위
-  loopEnabled: boolean;
-}
-
 // PDF 뷰어 옵션
 export interface PDFViewerOptions extends BaseViewerOptions {
   /**
@@ -72,6 +64,11 @@ export interface TextViewerOptions extends BaseViewerOptions {
   // 여백 설정
   marginHorizontal: number;
   marginVertical: number;
+
+  /**
+   * 최근 본 페이지 (자동 저장/복원용, UI 노출 X)
+   */
+  lastPage?: number;
 }
 
 // EPUB 뷰어 옵션
@@ -114,4 +111,3 @@ export type TextViewerSettingsProps = ViewerSettingsProps<TextViewerOptions>;
 export type PDFViewerSettingsProps = ViewerSettingsProps<PDFViewerOptions>;
 export type EPUBViewerSettingsProps = ViewerSettingsProps<EPUBViewerOptions>;
 export type ImageViewerSettingsProps = ViewerSettingsProps<ImageViewerOptions>;
-export type ZipImageViewerSettingsProps = ViewerSettingsProps<ZipImageViewerOptions>;
