@@ -64,6 +64,7 @@ const defaultImageViewerOptions: ImageViewerOptions = {
   contentFit: 'contain',
   backgroundColor: '#000',
   theme: 'light',
+  showPageIndicator: true,
 };
 
 const defaultEPUBViewerOptions: EPUBViewerOptions = {
@@ -96,6 +97,7 @@ const defaultZipViewerOptions: ZipImageViewerOptions = {
   autoPlayInterval: 3,
   loopEnabled: true,
   theme: 'light',
+  showPageIndicator: true,
 };
 
 // 컨텍스트 생성

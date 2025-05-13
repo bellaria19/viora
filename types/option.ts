@@ -15,6 +15,7 @@ export interface ImageViewerOptions extends BaseViewerOptions {
 
   // 표시 설정
   contentFit: 'contain' | 'cover' | 'fill' | 'none';
+  showPageIndicator?: boolean; // 페이지 인디케이터 표시 여부(기본값 true)
 
   // 색상 설정
   backgroundColor: string;

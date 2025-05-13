@@ -62,6 +62,37 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const savedPanX = useSharedValue(0);
   const panY = useSharedValue(0);
   const savedPanY = useSharedValue(0);
+  const swipeTranslateX = useSharedValue(0); // 스와이프 시 임시 이동 상태
+
+  // 이미지 애니메이션 스타일들
+  // 각 스타일마다 useAnimatedStyle을 미리 선언해서 React Hooks 규칙 위반 방지
+  const currentImageStyle = useAnimatedStyle(() => {
+    let baseX = 0;
+    if (slideDirection) {
+      baseX = slideDirection === 'left' ? offset.value - SCREEN_WIDTH : offset.value + SCREEN_WIDTH;
+    }
+    return {
+      position: 'absolute',
+      left: 0,
+      width: SCREEN_WIDTH,
+      height: SCREEN_HEIGHT,
+      transform: [
+        { translateX: baseX + panX.value + swipeTranslateX.value },
+        { translateY: panY.value },
+        { scale: scale.value },
+      ],
+    };
+  });
+
+  const prevImageStyle = useAnimatedStyle(() => {
+    return {
+      position: 'absolute',
+      left: 0,
+      width: SCREEN_WIDTH,
+      height: SCREEN_HEIGHT,
+      transform: [{ translateX: offset.value }, { translateY: 0 }, { scale: 1 }],
+    };
+  });
 
   // 핀치 제스처
   const pinchGesture = Gesture.Pinch()
@@ -70,6 +101,21 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
     })
     .onEnd(() => {
       savedScale.value = scale.value;
+    });
+
+  // 이미지 내에서 움직이는 팬 제스처
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      // 확대 상태에서만 이미지 내부 이동 허용
+      if (scale.value > 1) {
+        panX.value = savedPanX.value + e.translationX;
+        panY.value = savedPanY.value + e.translationY;
+      }
+    })
+    .onEnd(() => {
+      // 현재 상태 저장
+      savedPanX.value = panX.value;
+      savedPanY.value = panY.value;
     });
 
   // 더블 탭 제스처
@@ -90,50 +136,52 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
       }
     });
 
-  // 슬라이드 애니메이션 스타일 제거, 두 이미지의 위치를 offset으로 조정
-  const getAnimatedImageStyle = (type: 'current' | 'prev') => {
-    return useAnimatedStyle(() => {
-      let baseX = 0;
-      if (slideDirection) {
-        if (type === 'current') {
-          baseX =
-            slideDirection === 'left' ? offset.value - SCREEN_WIDTH : offset.value + SCREEN_WIDTH;
-        } else {
-          baseX = offset.value;
-        }
-      }
-      return {
-        position: 'absolute',
-        left: 0,
-        width: SCREEN_WIDTH,
-        height: SCREEN_HEIGHT,
-        transform: [
-          { translateX: baseX + (type === 'current' ? panX.value : 0) },
-          { translateY: type === 'current' ? panY.value : 0 },
-          { scale: type === 'current' ? scale.value : 1 },
-        ],
-      };
-    });
-  };
-
   // 페이지 전환 함수
   const goToPage = (index: number) => {
     setIndex(index);
   };
 
-  // 좌우 스와이프 제스처 추가
-  const swipeGesture = Gesture.Pan().onEnd((e) => {
-    if (e.translationX < -50 && index < images.length - 1) {
-      runOnJS(goToPage)(index + 1);
-    } else if (e.translationX > 50 && index > 0) {
-      runOnJS(goToPage)(index - 1);
-    }
-  });
+  // 좌우 스와이프 제스처
+  const swipeGesture = Gesture.Pan()
+    .onBegin(() => {
+      // 확대 상태가 아닐 때만 스와이프 동작 허용
+      if (scale.value <= 1) {
+        swipeTranslateX.value = 0; // 초기화
+      }
+    })
+    .onUpdate((e) => {
+      // 확대 상태가 아닐 때만 스와이프 업데이트
+      if (scale.value <= 1) {
+        // 첫 페이지에서 오른쪽, 마지막 페이지에서 왼쪽 스와이프 시 저항감 부여
+        if (
+          (index === 0 && e.translationX > 0) ||
+          (index === images.length - 1 && e.translationX < 0)
+        ) {
+          swipeTranslateX.value = e.translationX * 0.3; // 저항감 (30%만 움직임)
+        } else {
+          swipeTranslateX.value = e.translationX;
+        }
+      }
+    })
+    .onEnd((e) => {
+      // 확대 상태가 아닐 때만 페이지 전환
+      if (scale.value <= 1) {
+        if (e.translationX < -80 && index < images.length - 1) {
+          runOnJS(goToPage)(index + 1);
+        } else if (e.translationX > 80 && index > 0) {
+          runOnJS(goToPage)(index - 1);
+        }
+        // 페이지 전환 여부와 상관없이 스와이프 상태 초기화
+        swipeTranslateX.value = 0;
+      }
+    });
 
-  // 기존 composed 제스처에 swipeGesture 추가
-  const composed = Gesture.Exclusive(
+  // 제스처 조합 - 확대 상태에 따라 다른 제스처 활성화
+  const composed = Gesture.Simultaneous(
+    // 핀치와 더블탭은 항상 사용 가능
     Gesture.Simultaneous(pinchGesture, doubleTapGesture),
-    swipeGesture,
+    // 확대 상태에 따라 적절히 처리되는 팬/스와이프 제스처들
+    Gesture.Simultaneous(panGesture, swipeGesture),
   );
 
   // SectionList 데이터 구조 정의
@@ -223,7 +271,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
             <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}>
               {/* 이전 이미지 */}
               {slideDirection && (
-                <Animated.View style={getAnimatedImageStyle('prev')}>
+                <Animated.View style={prevImageStyle}>
                   <ExpoImage
                     source={{ uri: images[prevIndex.current] }}
                     style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
@@ -234,7 +282,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
                 </Animated.View>
               )}
               {/* 현재 이미지 */}
-              <Animated.View style={getAnimatedImageStyle('current')}>
+              <Animated.View style={currentImageStyle}>
                 <ExpoImage
                   source={{ uri: images[index] }}
                   style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}

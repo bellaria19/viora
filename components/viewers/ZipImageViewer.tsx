@@ -1,10 +1,11 @@
-import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
-import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import * as ZipArchive from 'react-native-zip-archive';
+
+import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { useViewerSettings } from '@/hooks/useViewerSettings';
 import Overlay from '../common/Overlay';
 import ImageViewer from './ImageViewer';
 
@@ -20,81 +21,19 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const navigation = useNavigation();
-  // const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
   const extractionCancelled = useRef(false);
 
   // ZIP 이미지 뷰어 설정
-  const { zipViewerOptions, updateZipViewerOptions } = useViewerSettings();
   const { imageViewerOptions, updateImageViewerOptions } = useViewerSettings();
-
-  // 설정 섹션 정의
-  const settingsSections = useMemo<SettingsSection[]>(
-    () => [
-      {
-        title: '정렬 설정',
-        data: [
-          {
-            key: 'sortImagesBy',
-            type: 'button-group',
-            value: zipViewerOptions.sortImagesBy,
-            options: [
-              { value: 'name', label: '이름순', icon: 'arrow-down-a-z' },
-              { value: 'date', label: '날짜순', icon: 'calendar' },
-              { value: 'size', label: '크기순', icon: 'weight-scale' },
-            ],
-          },
-        ],
-      },
-      {
-        title: '자동 재생',
-        data: [
-          {
-            key: 'autoPlayEnabled',
-            type: 'switch',
-            value: zipViewerOptions.autoPlayEnabled,
-            label: '자동 재생',
-          },
-          {
-            key: 'autoPlayInterval',
-            type: 'slider',
-            value: zipViewerOptions.autoPlayInterval,
-            label: '재생 간격',
-            min: 1,
-            max: 10,
-            step: 1,
-            unit: '초',
-          },
-          {
-            key: 'loopEnabled',
-            type: 'switch',
-            value: zipViewerOptions.loopEnabled,
-            label: '반복 재생',
-          },
-        ],
-      },
-    ],
-    [zipViewerOptions],
-  );
 
   const tempDirectory = useMemo(() => `${FileSystem.cacheDirectory}zip-viewer-${Date.now()}/`, []);
 
   // 이미지 정렬 함수
-  const sortImages = useCallback(
-    (imageFiles: string[]) => {
-      return [...imageFiles].sort((a, b) => {
-        switch (zipViewerOptions.sortImagesBy) {
-          case 'name':
-            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-          case 'date':
-          case 'size':
-            return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
-          default:
-            return 0;
-        }
-      });
-    },
-    [zipViewerOptions.sortImagesBy],
-  );
+  const sortImages = useCallback((imageFiles: string[]) => {
+    return [...imageFiles].sort((a, b) => {
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+    });
+  }, []);
 
   // 임시 디렉토리 정리 함수
   const cleanupTempDirectory = useCallback(async () => {
@@ -156,7 +95,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
         return;
       }
 
-      // 설정에 따라 이미지 정렬
+      // 이미지 정렬
       const sortedImages = sortImages(imageFiles);
 
       // 이미지 경로 검증
@@ -172,7 +111,11 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
         }),
       );
 
-      setImages(validImages.filter((path): path is string => path !== null));
+      // 유효한 이미지 경로만 필터링
+      const filteredImages = validImages.filter((path): path is string => path !== null);
+
+      setImages(filteredImages);
+      setCurrentIndex(0); // 첫 번째 이미지로 초기화
     } catch (err) {
       console.error('Error extracting ZIP:', err);
       if (err instanceof Error) {
@@ -194,48 +137,86 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
       // 컴포넌트 언마운트 시 정리
       extractionCancelled.current = true;
       cleanupTempDirectory();
-
-      // 자동 재생 타이머 정리
-      // if (autoPlayTimerRef.current) {
-      //   clearInterval(autoPlayTimerRef.current);
-      // }
     };
   }, [extractAndLoadImages, cleanupTempDirectory]);
 
-  // 자동 재생 설정 적용
-  // useEffect(() => {
-  //   if (autoPlayTimerRef.current) {
-  //     clearInterval(autoPlayTimerRef.current);
-  //     autoPlayTimerRef.current = null;
-  //   }
-
-  //   if (zipViewerOptions.autoPlayEnabled && images.length > 0) {
-  //     autoPlayTimerRef.current = setInterval(() => {
-  //       setCurrentIndex((prevIndex) => {
-  //         if (prevIndex >= images.length - 1) {
-  //           return zipViewerOptions.loopEnabled ? 0 : prevIndex;
-  //         }
-  //         return prevIndex + 1;
-  //       });
-  //     }, zipViewerOptions.autoPlayInterval * 1000);
-  //   }
-
-  //   return () => {
-  //     if (autoPlayTimerRef.current) {
-  //       clearInterval(autoPlayTimerRef.current);
-  //     }
-  //   };
-  // }, [
-  //   zipViewerOptions.autoPlayEnabled,
-  //   zipViewerOptions.autoPlayInterval,
-  //   zipViewerOptions.loopEnabled,
-  //   images.length,
-  // ]);
-
   // 페이지 변경 핸들러
-  const handlePageChange = (index: number) => {
+  const handleIndexChange = useCallback((index: number) => {
+    console.log(`ZipImageViewer: handleIndexChange called with index ${index}`);
     setCurrentIndex(index);
-  };
+  }, []);
+
+  // 설정 섹션
+  const sections: SettingsSection[] = useMemo(
+    () => [
+      {
+        title: '제스처 설정',
+        data: [
+          {
+            key: 'enableDoubleTapZoom',
+            type: 'switch',
+            value: imageViewerOptions.enableDoubleTapZoom,
+            label: '더블 탭 확대/축소',
+          },
+        ],
+      },
+      {
+        title: '성능 설정',
+        data: [
+          {
+            key: 'enablePreload',
+            type: 'switch',
+            value: imageViewerOptions.enablePreload,
+            label: '이미지 미리 로드',
+          },
+          {
+            key: 'enableCache',
+            type: 'switch',
+            value: imageViewerOptions.enableCache,
+            label: '이미지 캐싱',
+          },
+        ],
+      },
+      {
+        title: '표시 설정',
+        data: [
+          {
+            key: 'contentFit',
+            type: 'button-group',
+            value: imageViewerOptions.contentFit,
+            label: '이미지 표시 방식',
+            options: [
+              { value: 'contain', label: 'Contain' },
+              { value: 'cover', label: 'Cover' },
+              { value: 'fill', label: 'Fill' },
+              { value: 'none', label: 'None' },
+            ],
+          },
+        ],
+      },
+      {
+        title: '색상 설정',
+        data: [
+          {
+            key: 'backgroundColor',
+            type: 'color-group',
+            value: imageViewerOptions.backgroundColor,
+            label: '배경 색상',
+            colorOptions: ['#ffffff', '#000000', '#222222', '#444444', '#666666', '#888888'],
+          },
+        ],
+      },
+    ],
+    [imageViewerOptions],
+  );
+
+  // 설정 변경 핸들러
+  const handleOptionChange = useCallback(
+    (key: string, value: any) => {
+      updateImageViewerOptions({ [key]: value });
+    },
+    [updateImageViewerOptions],
+  );
 
   if (isLoading) {
     return (
@@ -259,7 +240,11 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={styles.container}>
           {images.length > 0 && (
-            <ImageViewer uri={images} currentIndex={currentIndex} onIndexChange={setCurrentIndex} />
+            <ImageViewer
+              uri={images}
+              currentIndex={currentIndex}
+              onIndexChange={handleIndexChange}
+            />
           )}
           <Overlay
             visible={overlayVisible}
@@ -271,7 +256,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
             showSlider={images.length > 1}
             currentPage={currentIndex + 1}
             totalPages={images.length}
-            onPageChange={(page) => handlePageChange(page - 1)}
+            onPageChange={handleIndexChange}
           />
         </View>
       </TouchableWithoutFeedback>
@@ -279,66 +264,8 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
         title="이미지 설정"
         isVisible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
-        sections={[
-          {
-            title: '제스처 설정',
-            data: [
-              {
-                key: 'enableDoubleTapZoom',
-                type: 'switch',
-                value: imageViewerOptions.enableDoubleTapZoom,
-                label: '더블 탭 확대/축소',
-              },
-            ],
-          },
-          {
-            title: '성능 설정',
-            data: [
-              {
-                key: 'enablePreload',
-                type: 'switch',
-                value: imageViewerOptions.enablePreload,
-                label: '이미지 미리 로드',
-              },
-              {
-                key: 'enableCache',
-                type: 'switch',
-                value: imageViewerOptions.enableCache,
-                label: '이미지 캐싱',
-              },
-            ],
-          },
-          {
-            title: '표시 설정',
-            data: [
-              {
-                key: 'contentFit',
-                type: 'button-group',
-                value: imageViewerOptions.contentFit,
-                label: '이미지 표시 방식',
-                options: [
-                  { value: 'contain', label: 'Contain' },
-                  { value: 'cover', label: 'Cover' },
-                  { value: 'fill', label: 'Fill' },
-                  { value: 'none', label: 'None' },
-                ],
-              },
-            ],
-          },
-          {
-            title: '색상 설정',
-            data: [
-              {
-                key: 'backgroundColor',
-                type: 'color-group',
-                value: imageViewerOptions.backgroundColor,
-                label: '배경 색상',
-                colorOptions: ['#ffffff', '#000000', '#222222', '#444444', '#666666', '#888888'],
-              },
-            ],
-          },
-        ]}
-        onOptionChange={(key, value) => updateImageViewerOptions({ [key]: value })}
+        sections={sections}
+        onOptionChange={handleOptionChange}
       />
     </>
   );
