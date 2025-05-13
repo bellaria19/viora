@@ -1,12 +1,11 @@
+import Overlay from '@/components/common/Overlay';
+import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import * as ZipArchive from 'react-native-zip-archive';
-
-import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
-import { useViewerSettings } from '@/hooks/useViewerSettings';
-import Overlay from '../common/Overlay';
 import ImageViewer from './ImageViewer';
 
 interface ZipImageViewerProps {
@@ -14,18 +13,19 @@ interface ZipImageViewerProps {
 }
 
 export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
+  // 기본 상태 설정
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+
   const navigation = useNavigation();
+  const { imageViewerOptions, updateImageViewerOptions } = useViewerSettings();
   const extractionCancelled = useRef(false);
 
-  // ZIP 이미지 뷰어 설정
-  const { imageViewerOptions, updateImageViewerOptions } = useViewerSettings();
-
+  // 이미지를 추출할 임시 디렉토리 생성
   const tempDirectory = useMemo(() => `${FileSystem.cacheDirectory}zip-viewer-${Date.now()}/`, []);
 
   // 이미지 정렬 함수
@@ -46,6 +46,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
     }
   }, [tempDirectory]);
 
+  // ZIP 파일 추출 및 이미지 로드
   const extractAndLoadImages = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -89,6 +90,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
         );
       });
 
+      // 이미지가 없는 경우 처리
       if (imageFiles.length === 0) {
         setError('ZIP 파일에 이미지가 없습니다.');
         await cleanupTempDirectory();
@@ -115,7 +117,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
       const filteredImages = validImages.filter((path): path is string => path !== null);
 
       setImages(filteredImages);
-      setCurrentIndex(0); // 첫 번째 이미지로 초기화
+      setCurrentIndex(0);
     } catch (err) {
       console.error('Error extracting ZIP:', err);
       if (err instanceof Error) {
@@ -131,23 +133,29 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
     }
   }, [tempDirectory, uri, sortImages, cleanupTempDirectory]);
 
+  // 컴포넌트 마운트 시 이미지 추출 실행
   useEffect(() => {
     extractAndLoadImages();
+
+    // 컴포넌트 언마운트 시 정리
     return () => {
-      // 컴포넌트 언마운트 시 정리
       extractionCancelled.current = true;
       cleanupTempDirectory();
     };
   }, [extractAndLoadImages, cleanupTempDirectory]);
 
-  // 페이지 변경 핸들러
+  // 인덱스 변경 핸들러
   const handleIndexChange = useCallback((index: number) => {
-    console.log(`ZipImageViewer: handleIndexChange called with index ${index}`);
     setCurrentIndex(index);
   }, []);
 
-  // 설정 섹션
-  const sections: SettingsSection[] = useMemo(
+  // 페이지 변경 핸들러
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentIndex(page - 1);
+  }, []);
+
+  // 설정 섹션 메모이제이션
+  const sections = useMemo<SettingsSection[]>(
     () => [
       {
         title: '제스처 설정',
@@ -210,7 +218,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
     [imageViewerOptions],
   );
 
-  // 설정 변경 핸들러
+  // 옵션 변경 핸들러
   const handleOptionChange = useCallback(
     (key: string, value: any) => {
       updateImageViewerOptions({ [key]: value });
@@ -218,19 +226,21 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
     [updateImageViewerOptions],
   );
 
+  // 로딩 중 렌더링
   if (isLoading) {
     return (
-      <View style={[styles.container]}>
+      <View style={styles.container}>
         <ActivityIndicator size="large" color="#000" />
-        <Text style={[styles.loadingText]}>ZIP 파일 처리 중...</Text>
+        <Text style={styles.loadingText}>ZIP 파일 처리 중...</Text>
       </View>
     );
   }
 
+  // 오류 발생 시 렌더링
   if (error) {
     return (
-      <View style={[styles.container]}>
-        <Text style={[styles.errorText]}>{error}</Text>
+      <View style={styles.container}>
+        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }
@@ -246,6 +256,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
               onIndexChange={handleIndexChange}
             />
           )}
+
           <Overlay
             visible={overlayVisible}
             onBack={() => {
@@ -256,10 +267,11 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
             showSlider={images.length > 1}
             currentPage={currentIndex + 1}
             totalPages={images.length}
-            onPageChange={handleIndexChange}
+            onPageChange={handlePageChange}
           />
         </View>
       </TouchableWithoutFeedback>
+
       <SettingsBottomSheet
         title="이미지 설정"
         isVisible={settingsVisible}
@@ -275,15 +287,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
     textAlign: 'center',
+    color: '#333',
   },
   errorText: {
     fontSize: 16,
     textAlign: 'center',
     padding: 20,
+    color: '#ff3b30',
   },
 });
