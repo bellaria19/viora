@@ -17,7 +17,12 @@ import {
   View,
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -101,9 +106,9 @@ export default function TextViewer({ uri }: TextViewerProps) {
       // 페이지당 글자 수 계산
       const charsPerPage = charsPerLine * linesPerPage * 0.9; // 10% 여유 공간
 
-      console.log(
-        `페이지당 글자 수: ${charsPerPage} (줄당 ${charsPerLine}글자 × ${linesPerPage}줄 × 0.9)`,
-      );
+      // console.log(
+      //   `페이지당 글자 수: ${charsPerPage} (줄당 ${charsPerLine}글자 × ${linesPerPage}줄 × 0.9)`,
+      // );
 
       // 글자 단위로 페이지 분할
       const pageTexts: Page[] = [];
@@ -154,14 +159,14 @@ export default function TextViewer({ uri }: TextViewerProps) {
         remainingText = remainingText.replace(/^[\s\n]+/, '');
       }
 
-      console.log(`총 ${pageTexts.length}페이지로 분할됨 (총 ${content.length}자)`);
+      // console.log(`총 ${pageTexts.length}페이지로 분할됨 (총 ${content.length}자)`);
 
       // 각 페이지의 글자 수 확인 (디버깅용)
-      if (__DEV__) {
-        pageTexts.forEach((page, idx) => {
-          console.log(`페이지 ${idx + 1}: ${page.text.length}자`);
-        });
-      }
+      // if (__DEV__) {
+      //   pageTexts.forEach((page, idx) => {
+      //     console.log(`페이지 ${idx + 1}: ${page.text.length}자`);
+      //   });
+      // }
 
       setPages(pageTexts);
       setTotalPages(pageTexts.length);
@@ -270,6 +275,11 @@ export default function TextViewer({ uri }: TextViewerProps) {
     [totalPages, updateTextViewerOptions],
   );
 
+  // 진동 피드백 실행 (UI 스레드 외부에서 실행)
+  const triggerHapticFeedback = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(console.error);
+  }, []);
+
   // 스크롤 이벤트 핸들러
   const handleScroll = useCallback(
     (event: any) => {
@@ -284,6 +294,17 @@ export default function TextViewer({ uri }: TextViewerProps) {
     [currentPage, updateTextViewerOptions],
   );
 
+  // Reanimated에서 scrollEnabled 속성을 제어하기 위한 상태
+  const [flatListScrollEnabled, setFlatListScrollEnabled] = useState(true);
+
+  // isSwipeInProgress가 변경될 때 ScrollEnabled 상태 업데이트
+  useAnimatedReaction(
+    () => isSwipeInProgress.value,
+    (inProgress) => {
+      runOnJS(setFlatListScrollEnabled)(!inProgress);
+    },
+  );
+
   // 스와이프 제스처
   const swipeGesture = Gesture.Pan()
     .onBegin(() => {
@@ -291,35 +312,31 @@ export default function TextViewer({ uri }: TextViewerProps) {
       swipeTranslateX.value = 0;
     })
     .onUpdate((e) => {
-      if (isSwipeInProgress.value) {
-        // 첫 페이지에서 오른쪽으로 스와이프하거나 마지막 페이지에서 왼쪽으로 스와이프할 때 저항 추가
-        if (
-          (currentPage === 1 && e.translationX > 0) ||
-          (currentPage === totalPages && e.translationX < 0)
-        ) {
-          swipeTranslateX.value = e.translationX * 0.3;
-        } else {
-          swipeTranslateX.value = e.translationX;
-        }
+      // 첫 페이지에서 오른쪽으로 스와이프하거나 마지막 페이지에서 왼쪽으로 스와이프할 때 저항 추가
+      if (
+        (currentPage === 1 && e.translationX > 0) ||
+        (currentPage === totalPages && e.translationX < 0)
+      ) {
+        swipeTranslateX.value = e.translationX * 0.3;
+      } else {
+        swipeTranslateX.value = e.translationX;
       }
     })
     .onEnd((e) => {
-      if (isSwipeInProgress.value) {
-        isSwipeInProgress.value = false;
+      isSwipeInProgress.value = false;
 
-        // 스와이프 효과로 페이지 변경
-        if (e.translationX < -80 && currentPage < totalPages) {
-          // 진동 효과
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          runOnJS(handlePageChange)(currentPage + 1);
-        } else if (e.translationX > 80 && currentPage > 1) {
-          // 진동 효과
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          runOnJS(handlePageChange)(currentPage - 1);
-        }
-
-        swipeTranslateX.value = 0;
+      // 스와이프 효과로 페이지 변경
+      if (e.translationX < -80 && currentPage < totalPages) {
+        // UI 스레드가 아닌 JS 스레드에서 Haptics 호출
+        runOnJS(triggerHapticFeedback)();
+        runOnJS(handlePageChange)(currentPage + 1);
+      } else if (e.translationX > 80 && currentPage > 1) {
+        // UI 스레드가 아닌 JS 스레드에서 Haptics 호출
+        runOnJS(triggerHapticFeedback)();
+        runOnJS(handlePageChange)(currentPage - 1);
       }
+
+      swipeTranslateX.value = 0;
     });
 
   // 애니메이션 스타일
@@ -543,7 +560,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
                   index,
                 })}
                 onMomentumScrollEnd={handleScroll}
-                scrollEnabled={!isSwipeInProgress.value}
+                scrollEnabled={flatListScrollEnabled}
                 onScrollToIndexFailed={() => {
                   // 초기 스크롤 실패 시 한 번 더 시도
                   setTimeout(() => {
