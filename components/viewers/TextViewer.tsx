@@ -18,8 +18,13 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// 상단 오버레이 높이 (paddingTop)
+const PADDING_TOP_HEIGHT = 40;
+const PADDING_BOTTOM_HEIGHT = 40;
 
 interface TextViewerProps {
   uri: string;
@@ -42,6 +47,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
   const flatListRef = useRef<FlatList>(null);
   const navigation = useNavigation();
   const { textViewerOptions, updateTextViewerOptions } = useViewerSettings();
+  const insets = useSafeAreaInsets();
 
   // 스와이프 애니메이션 변수
   const swipeTranslateX = useSharedValue(0);
@@ -82,9 +88,14 @@ export default function TextViewer({ uri }: TextViewerProps) {
     const marginHorizontal = textViewerOptions.marginHorizontal;
     const marginVertical = textViewerOptions.marginVertical;
 
+    // SafeArea와 Overlay topBar 영역을 제외한 실제 사용 가능한 높이 계산
+    const availableHeight = SCREEN_HEIGHT - insets.top - PADDING_TOP_HEIGHT - PADDING_BOTTOM_HEIGHT;
+
     // 화면에 표시할 수 있는 텍스트의 근사치 계산
     const charPerLine = Math.floor((SCREEN_WIDTH - marginHorizontal * 2) / (fontSize * 0.6));
-    const linesPerPage = Math.floor((SCREEN_HEIGHT - marginVertical * 2) / (fontSize * lineHeight));
+    const linesPerPage = Math.floor(
+      (availableHeight - marginVertical * 2) / (fontSize * lineHeight),
+    );
     const charsPerPage = charPerLine * linesPerPage * 0.85; // 85%만 사용하여 여유 공간 확보
 
     // 텍스트 분할
@@ -144,6 +155,8 @@ export default function TextViewer({ uri }: TextViewerProps) {
     textViewerOptions.marginHorizontal,
     textViewerOptions.marginVertical,
     textViewerOptions.lastPage,
+    insets.top,
+    insets.bottom,
   ]);
 
   useEffect(() => {
@@ -358,7 +371,9 @@ export default function TextViewer({ uri }: TextViewerProps) {
             {
               width: SCREEN_WIDTH,
               paddingHorizontal: textViewerOptions.marginHorizontal,
-              paddingVertical: textViewerOptions.marginVertical,
+              paddingTop: insets.top + PADDING_TOP_HEIGHT + textViewerOptions.marginVertical,
+              paddingBottom:
+                insets.bottom + PADDING_BOTTOM_HEIGHT + textViewerOptions.marginVertical,
               backgroundColor: themeStyles.backgroundColor,
             },
           ]}
@@ -387,6 +402,8 @@ export default function TextViewer({ uri }: TextViewerProps) {
       textViewerOptions.lineHeight,
       themeStyles.backgroundColor,
       themeStyles.textColor,
+      insets.top,
+      insets.bottom,
     ],
   );
 
@@ -491,7 +508,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   pageContainer: {
-    padding: 16,
     justifyContent: 'flex-start',
     height: SCREEN_HEIGHT,
   },
