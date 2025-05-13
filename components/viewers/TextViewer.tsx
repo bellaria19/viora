@@ -1,9 +1,10 @@
 import Overlay from '@/components/common/Overlay';
 import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -19,17 +20,16 @@ interface TextViewerProps {
 }
 
 export default function TextViewer({ uri }: TextViewerProps) {
-  const [content, setContent] = useState<string>('');
+  const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const navigation = useNavigation();
-
-  // 텍스트 뷰어 설정
   const { textViewerOptions, updateTextViewerOptions } = useViewerSettings();
 
-  // 텍스트 파일 불러오기 (UTF-8만 지원)
+  // 텍스트 파일 불러오기
+  // UTF-8만 지원
   const loadTextContent = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -38,13 +38,12 @@ export default function TextViewer({ uri }: TextViewerProps) {
       if (!fileInfo || !fileInfo.exists) {
         throw new Error('파일이 존재하지 않습니다.');
       }
-      // UTF-8로 바로 읽기
       const text = await FileSystem.readAsStringAsync(uri, {
         encoding: FileSystem.EncodingType.UTF8,
       });
       setContent(text);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -54,125 +53,111 @@ export default function TextViewer({ uri }: TextViewerProps) {
     loadTextContent();
   }, [loadTextContent]);
 
-  // 테마에 따른 배경색과 텍스트 색상 가져오기
-  const getThemeStyles = () => {
-    switch (textViewerOptions.theme) {
-      case 'light':
-        return { backgroundColor: '#fff', textColor: '#333' };
-      case 'dark':
-        return { backgroundColor: '#1a1a1a', textColor: '#eee' };
-      case 'sepia':
-        return { backgroundColor: '#f8f1e3', textColor: '#5b4636' };
-      default:
-        return {
-          backgroundColor: textViewerOptions.backgroundColor,
-          textColor: textViewerOptions.textColor,
-        };
+  // 테마 스타일 useMemo로 최적화
+  const themeStyles = useMemo(() => {
+    const theme = THEMES.find((t) => t.value === textViewerOptions.theme);
+    if (theme) {
+      return { backgroundColor: theme.bgColor, textColor: theme.textColor };
     }
-  };
+    return {
+      backgroundColor: textViewerOptions.backgroundColor,
+      textColor: textViewerOptions.textColor,
+    };
+  }, [textViewerOptions]);
 
-  const themeStyles = getThemeStyles();
+  // 설정 섹션 useMemo로 최적화
+  const sections: SettingsSection[] = useMemo(
+    () => [
+      {
+        title: '테마',
+        data: [
+          {
+            key: 'theme',
+            type: 'button-group',
+            value: textViewerOptions.theme,
+            label: '테마',
+            options: THEMES.map((t) => ({ value: t.value, label: t.label })),
+          },
+        ],
+      },
+      {
+        title: '글꼴',
+        data: [
+          {
+            key: 'fontFamily',
+            type: 'button-group',
+            value: textViewerOptions.fontFamily,
+            label: '글꼴',
+            options: FONTS.map((f) => ({ value: f.value, label: f.label })),
+          },
+        ],
+      },
+      {
+        title: '글자 크기',
+        data: [
+          {
+            key: 'fontSize',
+            type: 'slider',
+            value: textViewerOptions.fontSize,
+            label: '글자 크기',
+            min: 12,
+            max: 28,
+            step: 1,
+            unit: 'px',
+          },
+        ],
+      },
+      {
+        title: '줄 간격',
+        data: [
+          {
+            key: 'lineHeight',
+            type: 'slider',
+            value: textViewerOptions.lineHeight,
+            label: '줄 간격',
+            min: 1.0,
+            max: 2.5,
+            step: 0.1,
+          },
+        ],
+      },
+      {
+        title: '여백',
+        data: [
+          {
+            key: 'marginHorizontal',
+            type: 'slider',
+            value: textViewerOptions.marginHorizontal,
+            label: '여백',
+            min: 8,
+            max: 40,
+            step: 2,
+            unit: 'px',
+          },
+        ],
+      },
+    ],
+    [textViewerOptions],
+  );
 
-  // SectionList 데이터 구조 정의
-  const themes = [
-    { value: 'light', label: '라이트', bgColor: '#fff', textColor: '#333' },
-    { value: 'dark', label: '다크', bgColor: '#1a1a1a', textColor: '#eee' },
-    { value: 'sepia', label: '세피아', bgColor: '#f8f1e3', textColor: '#5b4636' },
-  ];
-  const fonts = [
-    { value: 'System', label: '시스템' },
-    { value: 'SpaceMono', label: '스페이스 모노' },
-    { value: 'Arial', label: '아리알' },
-    { value: 'Georgia', label: '조지아' },
-  ];
-
-  // 인코딩 옵션을 섹션에 추가
-  const sections: SettingsSection[] = [
-    {
-      title: '테마',
-      data: [
-        {
-          key: 'theme',
-          type: 'button-group',
-          value: textViewerOptions.theme,
-          label: '테마',
-          options: themes.map((t) => ({ value: t.value, label: t.label })),
-        },
-      ],
+  // 옵션 변경 핸들러
+  const handleOptionChange = useCallback(
+    (key: string, value: any) => {
+      if (key === 'theme') {
+        const themeObj = THEMES.find((t) => t.value === value);
+        updateTextViewerOptions({
+          theme: value,
+          backgroundColor: themeObj?.bgColor,
+          textColor: themeObj?.textColor,
+        });
+      } else if (key === 'marginHorizontal') {
+        updateTextViewerOptions({ marginHorizontal: value, marginVertical: value });
+      } else {
+        updateTextViewerOptions({ [key]: value });
+      }
     },
-
-    {
-      title: '글꼴',
-      data: [
-        {
-          key: 'fontFamily',
-          type: 'button-group',
-          value: textViewerOptions.fontFamily,
-          label: '글꼴',
-          options: fonts,
-        },
-      ],
-    },
-    {
-      title: '글자 크기',
-      data: [
-        {
-          key: 'fontSize',
-          type: 'slider',
-          value: textViewerOptions.fontSize,
-          label: '글자 크기',
-          min: 12,
-          max: 28,
-          step: 1,
-          unit: 'px',
-        },
-      ],
-    },
-    {
-      title: '줄 간격',
-      data: [
-        {
-          key: 'lineHeight',
-          type: 'slider',
-          value: textViewerOptions.lineHeight,
-          label: '줄 간격',
-          min: 1.0,
-          max: 2.5,
-          step: 0.1,
-        },
-      ],
-    },
-    {
-      title: '여백',
-      data: [
-        {
-          key: 'marginHorizontal',
-          type: 'slider',
-          value: textViewerOptions.marginHorizontal,
-          label: '여백',
-          min: 8,
-          max: 40,
-          step: 2,
-          unit: 'px',
-        },
-      ],
-    },
-  ];
-
-  const handleOptionChange = (key: string, value: any) => {
-    if (key === 'theme') {
-      const themeObj = themes.find((t) => t.value === value);
-      updateTextViewerOptions({
-        theme: value,
-        backgroundColor: themeObj?.bgColor,
-        textColor: themeObj?.textColor,
-      });
-    } else if (key === 'marginHorizontal') {
-      updateTextViewerOptions({ marginHorizontal: value, marginVertical: value });
-    } else {
-      updateTextViewerOptions({ [key]: value });
-    }
-  };
+    [updateTextViewerOptions],
+  );
 
   if (loading) {
     return (
@@ -191,7 +176,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         <Text style={[styles.statusText, { color: themeStyles.textColor, marginBottom: 20 }]}>
           {error}
         </Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => loadTextContent()}>
+        <TouchableOpacity style={styles.retryButton} onPress={loadTextContent}>
           <Text style={styles.retryText}>다시 시도</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -231,8 +216,6 @@ export default function TextViewer({ uri }: TextViewerProps) {
               {content}
             </Text>
           </ScrollView>
-
-          {/* 오버레이 */}
           <Overlay
             visible={overlayVisible}
             onBack={() => navigation.goBack()}
@@ -240,8 +223,6 @@ export default function TextViewer({ uri }: TextViewerProps) {
           />
         </View>
       </TouchableWithoutFeedback>
-
-      {/* 설정 바텀 시트 */}
       <SettingsBottomSheet
         title="텍스트 설정"
         isVisible={settingsVisible}
@@ -289,7 +270,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  // 빠른 인코딩 선택기 스타일
   quickEncodingSelector: {
     position: 'absolute',
     top: 100,

@@ -1,5 +1,6 @@
 import ResetButton from '@/components/ResetButton';
 import { colors } from '@/constants/colors';
+import { FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { resetAllFiles } from '@/utils/fileManager';
 import { FontAwesome6 } from '@expo/vector-icons';
@@ -42,11 +43,7 @@ export default function SettingsScreen() {
   };
 
   // 공통 옵션
-  const themeOptions = [
-    { value: 'light', label: '라이트' },
-    { value: 'dark', label: '다크' },
-    { value: 'sepia', label: '세피아' },
-  ];
+  const themeOptions = THEMES;
   const contentFitOptions = [
     { value: 'contain', label: 'Contain' },
     { value: 'cover', label: 'Cover' },
@@ -54,10 +51,7 @@ export default function SettingsScreen() {
     { value: 'none', label: 'None' },
   ];
   const colorOptions = ['#000', '#fff', '#222', '#007AFF', 'transparent'];
-  const fontOptions = [
-    { value: 'System', label: '시스템' },
-    { value: 'SpaceMono', label: 'SpaceMono' },
-  ];
+  const fontOptions = FONTS;
 
   // Section 데이터
   const sections = [
@@ -146,20 +140,6 @@ export default function SettingsScreen() {
           type: 'switch',
           value: pdfViewerOptions.enableDoubleTapZoom,
           label: '더블 탭 확대/축소',
-          viewer: 'pdf',
-        },
-        {
-          key: 'showPageNumbers',
-          type: 'switch',
-          value: pdfViewerOptions.showPageNumbers,
-          label: '페이지 번호 표시',
-          viewer: 'pdf',
-        },
-        {
-          key: 'showThumbnails',
-          type: 'switch',
-          value: pdfViewerOptions.showThumbnails,
-          label: '썸네일 표시',
           viewer: 'pdf',
         },
         {

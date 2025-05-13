@@ -25,6 +25,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
 
   // ZIP 이미지 뷰어 설정
   const { zipViewerOptions, updateZipViewerOptions } = useViewerSettings();
+  const { imageViewerOptions, updateImageViewerOptions } = useViewerSettings();
 
   // 설정 섹션 정의
   const settingsSections = useMemo<SettingsSection[]>(
@@ -231,8 +232,9 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
   //   images.length,
   // ]);
 
-  const handlePageChange = (page: number) => {
-    setCurrentIndex(page - 1);
+  // 페이지 변경 핸들러
+  const handlePageChange = (index: number) => {
+    setCurrentIndex(index);
   };
 
   if (isLoading) {
@@ -256,7 +258,9 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
     <>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={styles.container}>
-          {images.length > 0 && <ImageViewer uri={images[currentIndex]} />}
+          {images.length > 0 && (
+            <ImageViewer uri={images} currentIndex={currentIndex} onIndexChange={setCurrentIndex} />
+          )}
           <Overlay
             visible={overlayVisible}
             onBack={() => {
@@ -267,17 +271,74 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
             showSlider={images.length > 1}
             currentPage={currentIndex + 1}
             totalPages={images.length}
-            onPageChange={handlePageChange}
+            onPageChange={(page) => handlePageChange(page - 1)}
           />
         </View>
       </TouchableWithoutFeedback>
-
       <SettingsBottomSheet
-        title="ZIP 이미지 설정"
+        title="이미지 설정"
         isVisible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
-        sections={settingsSections}
-        onOptionChange={(key, value) => updateZipViewerOptions({ [key]: value })}
+        sections={[
+          {
+            title: '제스처 설정',
+            data: [
+              {
+                key: 'enableDoubleTapZoom',
+                type: 'switch',
+                value: imageViewerOptions.enableDoubleTapZoom,
+                label: '더블 탭 확대/축소',
+              },
+            ],
+          },
+          {
+            title: '성능 설정',
+            data: [
+              {
+                key: 'enablePreload',
+                type: 'switch',
+                value: imageViewerOptions.enablePreload,
+                label: '이미지 미리 로드',
+              },
+              {
+                key: 'enableCache',
+                type: 'switch',
+                value: imageViewerOptions.enableCache,
+                label: '이미지 캐싱',
+              },
+            ],
+          },
+          {
+            title: '표시 설정',
+            data: [
+              {
+                key: 'contentFit',
+                type: 'button-group',
+                value: imageViewerOptions.contentFit,
+                label: '이미지 표시 방식',
+                options: [
+                  { value: 'contain', label: 'Contain' },
+                  { value: 'cover', label: 'Cover' },
+                  { value: 'fill', label: 'Fill' },
+                  { value: 'none', label: 'None' },
+                ],
+              },
+            ],
+          },
+          {
+            title: '색상 설정',
+            data: [
+              {
+                key: 'backgroundColor',
+                type: 'color-group',
+                value: imageViewerOptions.backgroundColor,
+                label: '배경 색상',
+                colorOptions: ['#ffffff', '#000000', '#222222', '#444444', '#666666', '#888888'],
+              },
+            ],
+          },
+        ]}
+        onOptionChange={(key, value) => updateImageViewerOptions({ [key]: value })}
       />
     </>
   );
@@ -286,7 +347,6 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
     justifyContent: 'center',
   },
   loadingText: {
