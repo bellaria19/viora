@@ -183,7 +183,9 @@ export default function SettingsBottomSheet({
               </TouchableOpacity>
               <Text style={styles.stepperValue}>
                 {/* px 대신 1~10 단계로 표시, 단 lineHeight와 marginHorizontal는 실제 값 그대로 */}
-                {item.key === 'lineHeight' || item.key === 'marginHorizontal'
+                {item.key === 'lineHeight' ||
+                item.key === 'marginHorizontal' ||
+                item.key === 'marginVertical'
                   ? item.value + (item.unit ?? '')
                   : item.min !== undefined && item.max !== undefined && item.step !== undefined
                     ? Math.round((item.value - item.min) / item.step) + 1

@@ -3,13 +3,12 @@ import SettingsBottomSheet, { SettingsSection } from '@/components/common/Settin
 import { FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
+import { FlashList } from '@shopify/flash-list';
 import * as FileSystem from 'expo-file-system';
-import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
-  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -26,9 +25,6 @@ import Animated, {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// 상수 정의 - SafeAreaView를 사용하므로 패딩 필요 없음
-const OVERLAY_HEIGHT = 48; // Overlay 컴포넌트의 높이 (대략적인 값)
 
 interface TextViewerProps {
   uri: string;
@@ -48,14 +44,34 @@ export default function TextViewer({ uri }: TextViewerProps) {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
   const navigation = useNavigation();
   const { textViewerOptions, updateTextViewerOptions } = useViewerSettings();
   const insets = useSafeAreaInsets();
+  const [isSliderActive, setIsSliderActive] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 스와이프 애니메이션 변수
   const swipeTranslateX = useSharedValue(0);
   const isSwipeInProgress = useSharedValue(false);
+
+  // 동적 페이지 분할 관련 상태
+  const [measuring, setMeasuring] = useState(false);
+  const [measureText, setMeasureText] = useState('');
+  const [measureStartIdx, setMeasureStartIdx] = useState(0);
+  const [tempPages, setTempPages] = useState<Page[]>([]);
+  const [measureReady, setMeasureReady] = useState(false);
+
+  // 한 페이지에 들어갈 수 있는 최대 줄 수 계산
+  const fontSize = textViewerOptions.fontSize;
+  const lineHeight = textViewerOptions.lineHeight;
+  const marginHorizontal = textViewerOptions.marginHorizontal;
+  const marginVertical = textViewerOptions.marginVertical;
+  const safeAreaVertical = insets.top + insets.bottom;
+  const contentHeight = SCREEN_HEIGHT - marginVertical * 2 - safeAreaVertical;
+  const lineHeightPx = fontSize * lineHeight;
+  const maxLinesPerPage = Math.floor(contentHeight / lineHeightPx);
+  const contentWidth = SCREEN_WIDTH - marginHorizontal * 2;
 
   // 텍스트 파일 불러오기
   // UTF-8만 지원
@@ -78,133 +94,98 @@ export default function TextViewer({ uri }: TextViewerProps) {
     }
   }, [uri]);
 
-  // 페이지로 분할하기
-  const splitIntoPages = useCallback(() => {
-    if (!content) {
-      setPages([{ index: 0, text: content }]);
-      setTotalPages(1);
-      return;
-    }
-
-    try {
-      // 폰트 크기 및 화면 크기 기반 계산
-      const fontSize = textViewerOptions.fontSize;
-      const lineHeight = textViewerOptions.lineHeight;
-      const marginHorizontal = textViewerOptions.marginHorizontal;
-      const marginVertical = textViewerOptions.marginVertical;
-
-      // 화면에 표시할 수 있는 텍스트 양 계산
-      // 한 줄당 글자 수 × 화면에 표시할 수 있는 줄 수
-      const avgCharWidth = fontSize * 0.55;
-      const contentWidth = SCREEN_WIDTH - marginHorizontal * 2;
-      const charsPerLine = Math.floor(contentWidth / avgCharWidth);
-
-      const contentHeight = SCREEN_HEIGHT - marginVertical * 2;
-      const lineHeightPx = fontSize * lineHeight;
-      const linesPerPage = Math.floor(contentHeight / lineHeightPx);
-
-      // 페이지당 글자 수 계산
-      const charsPerPage = charsPerLine * linesPerPage * 0.9; // 10% 여유 공간
-
-      // console.log(
-      //   `페이지당 글자 수: ${charsPerPage} (줄당 ${charsPerLine}글자 × ${linesPerPage}줄 × 0.9)`,
-      // );
-
-      // 글자 단위로 페이지 분할
-      const pageTexts: Page[] = [];
-      let remainingText = content;
-      let pageIndex = 0;
-
-      while (remainingText.length > 0) {
-        let pageEnd = Math.min(remainingText.length, charsPerPage);
-
-        // 페이지의 끝이 단어 중간에 있지 않도록 조정
-        if (pageEnd < remainingText.length) {
-          // 가장 가까운 줄바꿈이나 공백 찾기
-          const lastNewLine = remainingText.lastIndexOf('\n', pageEnd);
-          const lastSpace = remainingText.lastIndexOf(' ', pageEnd);
-
-          // 줄바꿈과 공백 중 페이지 끝에 더 가까운 것 선택
-          let cutPoint = -1;
-
-          // 공백이 있고 페이지 끝에서 합리적인 거리에 있다면 해당 위치에서 자르기
-          if (lastSpace > 0 && pageEnd - lastSpace < 100) {
-            cutPoint = lastSpace;
-          }
-
-          // 줄바꿈이 있고 공백보다 페이지 끝에 더 가깝다면 해당 위치에서 자르기
-          if (lastNewLine > 0 && (cutPoint === -1 || lastNewLine > lastSpace)) {
-            cutPoint = lastNewLine;
-          }
-
-          // 적합한 자르기 위치가 있다면 페이지 끝 조정
-          if (cutPoint > 0) {
-            pageEnd = cutPoint + 1; // 공백이나 줄바꿈 다음 위치
-          }
-        }
-
-        // 현재 페이지의 텍스트 추출
-        const pageText = remainingText.substring(0, pageEnd);
-
-        // 페이지 객체 생성 및 추가
-        pageTexts.push({
-          index: pageIndex++,
-          text: pageText,
-        });
-
-        // 남은 텍스트 업데이트
-        remainingText = remainingText.substring(pageEnd);
-
-        // 남은 텍스트가 빈 공백이나 줄바꿈으로 시작한다면 제거
-        remainingText = remainingText.replace(/^[\s\n]+/, '');
+  // 동적 페이지 분할 시작
+  const startDynamicSplit = useCallback(() => {
+    // 옵션 변경 시 분할 관련 상태 완전 초기화
+    setMeasuring(false);
+    setPages([]);
+    setTempPages([]);
+    setMeasureText('');
+    setMeasureStartIdx(0);
+    setTotalPages(1);
+    setCurrentPage(1);
+    setTimeout(() => {
+      if (!content) {
+        setPages([{ index: 0, text: content }]);
+        return;
       }
-
-      // console.log(`총 ${pageTexts.length}페이지로 분할됨 (총 ${content.length}자)`);
-
-      // 각 페이지의 글자 수 확인 (디버깅용)
-      // if (__DEV__) {
-      //   pageTexts.forEach((page, idx) => {
-      //     console.log(`페이지 ${idx + 1}: ${page.text.length}자`);
-      //   });
-      // }
-
-      setPages(pageTexts);
-      setTotalPages(pageTexts.length);
-
-      // 저장된 마지막 페이지 확인
-      if (
-        textViewerOptions.lastPage &&
-        textViewerOptions.lastPage > 0 &&
-        textViewerOptions.lastPage <= pageTexts.length
-      ) {
-        setCurrentPage(textViewerOptions.lastPage);
-        // FlatList가 렌더링된 후 해당 페이지로 스크롤
-        setTimeout(() => {
-          if (flatListRef.current) {
-            flatListRef.current.scrollToIndex({
-              index: textViewerOptions.lastPage ? textViewerOptions.lastPage - 1 : 0,
-              animated: false,
-            });
-          }
-        }, 100);
-      } else {
-        setCurrentPage(1);
-      }
-    } catch (error) {
-      console.error('텍스트 분할 오류:', error);
-      // 오류 발생 시 단순 분할 방식으로 폴백
-      const simplePages = [{ index: 0, text: content }];
-      setPages(simplePages);
-      setTotalPages(1);
-      setCurrentPage(1);
-    }
+      setMeasuring(true);
+      setMeasureReady(true);
+    }, 0);
   }, [
     content,
     textViewerOptions.fontSize,
     textViewerOptions.lineHeight,
     textViewerOptions.marginHorizontal,
     textViewerOptions.marginVertical,
-    textViewerOptions.lastPage,
+  ]);
+
+  // 실제 줄 수 측정 및 분할 진행
+  const handleTextLayout = useCallback(
+    (e: any) => {
+      if (!measuring) return;
+      const lines = e.nativeEvent.lines;
+      if (lines.length <= maxLinesPerPage) {
+        let nextLen = measureText.length + 40;
+        if (measureStartIdx + nextLen >= content.length) {
+          // 분할 완료 시 index를 0부터 다시 부여
+          const allPages = [
+            ...tempPages,
+            { index: tempPages.length, text: content.slice(measureStartIdx) },
+          ];
+          const reindexedPages = allPages.map((p, i) => ({ ...p, index: i }));
+          setMeasuring(false);
+          setMeasureReady(false);
+          setPages(reindexedPages);
+          setTotalPages(reindexedPages.length);
+          setCurrentPage(1);
+          return;
+        }
+        setMeasureText(content.slice(measureStartIdx, measureStartIdx + nextLen));
+      } else {
+        let lastLen = measureText.length - 40;
+        if (lastLen <= 0) lastLen = 1;
+        const pageText = content.slice(measureStartIdx, measureStartIdx + lastLen);
+        const lastSpaceIdx = Math.max(
+          pageText.lastIndexOf(' '),
+          pageText.lastIndexOf('\n'),
+          pageText.lastIndexOf('\t'),
+        );
+        let cutLen = lastLen;
+        if (lastSpaceIdx > 10) {
+          cutLen = lastSpaceIdx + 1;
+        }
+        setTempPages((prev) => [
+          ...prev,
+          { index: prev.length, text: content.slice(measureStartIdx, measureStartIdx + cutLen) },
+        ]);
+        setMeasureStartIdx(measureStartIdx + cutLen);
+        setMeasureText('');
+        setTimeout(() => {
+          setMeasureText(content.slice(measureStartIdx + cutLen, measureStartIdx + cutLen + 40));
+        }, 0);
+      }
+    },
+    [measuring, measureText, measureStartIdx, content, maxLinesPerPage, tempPages],
+  );
+
+  // 측정 시작 트리거
+  useEffect(() => {
+    if (measureReady) {
+      setMeasureText(content.slice(0, 100));
+    }
+  }, [measureReady, content]);
+
+  // 옵션/텍스트 변경 시 분할 재시작
+  useEffect(() => {
+    startDynamicSplit();
+  }, [
+    content,
+    textViewerOptions.fontSize,
+    textViewerOptions.lineHeight,
+    textViewerOptions.marginHorizontal,
+    textViewerOptions.marginVertical,
+    insets,
   ]);
 
   // 페이지 내용 검증 함수
@@ -236,21 +217,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
   }, [loadTextContent]);
 
   useEffect(() => {
-    splitIntoPages();
-  }, [
-    splitIntoPages,
-    content,
-    textViewerOptions.fontSize,
-    textViewerOptions.lineHeight,
-    textViewerOptions.marginHorizontal,
-    textViewerOptions.marginVertical,
-  ]);
-
-  // 페이지 분할 후 검증
-  useEffect(() => {
-    if (pages.length > 0) {
-      verifyPageContent(pages);
-    }
+    verifyPageContent(pages);
   }, [pages, verifyPageContent]);
 
   // 페이지 변경 처리
@@ -260,7 +227,16 @@ export default function TextViewer({ uri }: TextViewerProps) {
         return;
       }
 
+      // 슬라이더 조작 플래그 설정
+      setIsSliderActive(true);
+
+      // 이전 타임아웃 취소
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
       setCurrentPage(page);
+      updateTextViewerOptions({ lastPage: page });
 
       if (flatListRef.current) {
         flatListRef.current.scrollToIndex({
@@ -269,20 +245,20 @@ export default function TextViewer({ uri }: TextViewerProps) {
         });
       }
 
-      // 마지막 페이지 저장
-      updateTextViewerOptions({ lastPage: page });
+      // 스크롤 조작 후 일정 시간이 지나면 슬라이더 조작 플래그 해제
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsSliderActive(false);
+      }, 300); // 스크롤 애니메이션 완료 예상 시간 이후로 설정
     },
     [totalPages, updateTextViewerOptions],
   );
 
-  // 진동 피드백 실행 (UI 스레드 외부에서 실행)
-  const triggerHapticFeedback = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(console.error);
-  }, []);
-
   // 스크롤 이벤트 핸들러
   const handleScroll = useCallback(
     (event: any) => {
+      // 슬라이더 조작 중에는 스크롤 이벤트에 의한 페이지 변경 무시
+      if (isSliderActive) return;
+
       const offsetX = event.nativeEvent.contentOffset.x;
       const page = Math.floor(offsetX / SCREEN_WIDTH) + 1;
 
@@ -291,8 +267,17 @@ export default function TextViewer({ uri }: TextViewerProps) {
         updateTextViewerOptions({ lastPage: page });
       }
     },
-    [currentPage, updateTextViewerOptions],
+    [currentPage, updateTextViewerOptions, isSliderActive],
   );
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Reanimated에서 scrollEnabled 속성을 제어하기 위한 상태
   const [flatListScrollEnabled, setFlatListScrollEnabled] = useState(true);
@@ -327,12 +312,8 @@ export default function TextViewer({ uri }: TextViewerProps) {
 
       // 스와이프 효과로 페이지 변경
       if (e.translationX < -80 && currentPage < totalPages) {
-        // UI 스레드가 아닌 JS 스레드에서 Haptics 호출
-        runOnJS(triggerHapticFeedback)();
         runOnJS(handlePageChange)(currentPage + 1);
       } else if (e.translationX > 80 && currentPage > 1) {
-        // UI 스레드가 아닌 JS 스레드에서 Haptics 호출
-        runOnJS(triggerHapticFeedback)();
         runOnJS(handlePageChange)(currentPage - 1);
       }
 
@@ -421,8 +402,18 @@ export default function TextViewer({ uri }: TextViewerProps) {
             key: 'marginHorizontal',
             type: 'stepper',
             value: textViewerOptions.marginHorizontal,
-            label: '여백',
-            min: 8,
+            label: '가로 여백',
+            min: 0,
+            max: 40,
+            step: 2,
+            unit: 'px',
+          },
+          {
+            key: 'marginVertical',
+            type: 'stepper',
+            value: textViewerOptions.marginVertical,
+            label: '세로 여백',
+            min: 0,
             max: 40,
             step: 2,
             unit: 'px',
@@ -444,7 +435,9 @@ export default function TextViewer({ uri }: TextViewerProps) {
           textColor: themeObj?.textColor,
         });
       } else if (key === 'marginHorizontal') {
-        updateTextViewerOptions({ marginHorizontal: value, marginVertical: value });
+        updateTextViewerOptions({ marginHorizontal: value });
+      } else if (key === 'marginVertical') {
+        updateTextViewerOptions({ marginVertical: value });
       } else {
         updateTextViewerOptions({ [key]: value });
       }
@@ -468,26 +461,23 @@ export default function TextViewer({ uri }: TextViewerProps) {
           ]}
         >
           <Text
-            style={[
-              styles.text,
-              {
-                fontFamily: textViewerOptions.fontFamily,
-                fontSize: textViewerOptions.fontSize,
-                lineHeight: textViewerOptions.fontSize * textViewerOptions.lineHeight,
-                color: themeStyles.textColor,
-              },
-            ]}
+            style={{
+              fontFamily: textViewerOptions.fontFamily,
+              fontSize: textViewerOptions.fontSize,
+              lineHeight: textViewerOptions.fontSize * textViewerOptions.lineHeight,
+              color: themeStyles.textColor,
+            }}
             allowFontScaling={false}
             testID={`page-${item.index}`} // 디버깅을 위한 테스트 ID 추가
           >
             {item.text}
           </Text>
           {/* 디버깅용 페이지 번호 표시 */}
-          {__DEV__ && (
+          {/* {__DEV__ && (
             <Text style={styles.debugPageNumber}>
               Page {item.index + 1}/{totalPages}
             </Text>
-          )}
+          )} */}
         </View>
       );
     },
@@ -516,6 +506,20 @@ export default function TextViewer({ uri }: TextViewerProps) {
     );
   }
 
+  // measuring(페이지 분할 중)일 때도 로딩 인디케이터 표시
+  if (measuring) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
+        <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
+          <ActivityIndicator size="large" color="#2196F3" />
+          <Text style={[styles.statusText, { color: themeStyles.textColor }]}>
+            페이지를 계산하는 중...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (error) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
@@ -537,41 +541,47 @@ export default function TextViewer({ uri }: TextViewerProps) {
     );
   }
 
-  // 이제 스크롤 모드 렌더링이 불필요하므로 항상 페이지 모드로 렌더링
+  // 기존 FlatList 위에 측정용 Text 추가
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
+      {/* 실제 측정용 Text (숨김) */}
+      {measuring && (
+        <Text
+          style={{
+            position: 'absolute',
+            opacity: 0,
+            fontSize: fontSize,
+            lineHeight: fontSize * lineHeight,
+            width: contentWidth,
+            fontFamily: textViewerOptions.fontFamily,
+            left: -9999,
+            top: -9999,
+          }}
+          onTextLayout={handleTextLayout}
+        >
+          {measureText}
+        </Text>
+      )}
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={[styles.container, { backgroundColor: themeStyles.backgroundColor }]}>
           <GestureDetector gesture={swipeGesture}>
             <Animated.View style={[styles.container, pageAnimStyle]}>
-              <FlatList
+              <FlashList
                 ref={flatListRef}
                 data={pages}
                 renderItem={renderPage}
-                keyExtractor={(item) => `page-${item.index}`}
+                keyExtractor={(item) =>
+                  `page-${item.index}-${textViewerOptions.fontSize}-${textViewerOptions.lineHeight}-${textViewerOptions.marginHorizontal}-${textViewerOptions.marginVertical}`
+                }
                 horizontal
                 pagingEnabled
                 bounces={false}
                 showsHorizontalScrollIndicator={false}
                 initialScrollIndex={currentPage - 1}
-                getItemLayout={(_, index) => ({
-                  length: SCREEN_WIDTH,
-                  offset: SCREEN_WIDTH * index,
-                  index,
-                })}
+                estimatedItemSize={SCREEN_WIDTH}
+                getItemType={() => 'page'}
                 onMomentumScrollEnd={handleScroll}
                 scrollEnabled={flatListScrollEnabled}
-                onScrollToIndexFailed={() => {
-                  // 초기 스크롤 실패 시 한 번 더 시도
-                  setTimeout(() => {
-                    if (flatListRef.current) {
-                      flatListRef.current.scrollToIndex({
-                        index: 0,
-                        animated: false,
-                      });
-                    }
-                  }, 100);
-                }}
               />
             </Animated.View>
           </GestureDetector>
@@ -603,18 +613,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
   pageContainer: {
     justifyContent: 'flex-start',
     height: SCREEN_HEIGHT,
-  },
-  text: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
   },
   centerContainer: {
     flex: 1,

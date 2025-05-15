@@ -64,7 +64,7 @@ export default function Overlay({
               minimumTrackTintColor="#fff"
               maximumTrackTintColor="#888"
               thumbTintColor="#fff"
-              onValueChange={(value) => onPageChange && onPageChange(value)}
+              onSlidingComplete={(value) => onPageChange && onPageChange(value)}
             />
           </>
         )}

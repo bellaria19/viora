@@ -20,6 +20,7 @@
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.0.14",
+    "@shopify/flash-list": "^1.8.0",
     "@types/styled-components-react-native": "^5.2.5",
     "buffer": "^6.0.3",
     "encoding-japanese": "^2.2.0",
