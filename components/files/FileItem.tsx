@@ -7,10 +7,11 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 interface FileItemProps {
   file: FileInfo;
   onPress: (file: FileInfo) => void;
-  showSize?: boolean; // 파일 크기 표시 여부 (files.tsx에서는 true, index.tsx에서는 false)
+  showSize?: boolean;
+  onMorePress?: (file: FileInfo) => void;
 }
 
-export default function FileItem({ file, onPress, showSize = false }: FileItemProps) {
+export default function FileItem({ file, onPress, showSize = false, onMorePress }: FileItemProps) {
   return (
     <TouchableOpacity
       style={[
@@ -40,6 +41,18 @@ export default function FileItem({ file, onPress, showSize = false }: FileItemPr
             : `최근 사용 날짜: ${formatDate(file.modifiedTime)}`}
         </Text>
       </View>
+      {onMorePress && (
+        <TouchableOpacity
+          onPress={(e) => {
+            e.stopPropagation();
+            onMorePress(file);
+          }}
+          style={styles.moreButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <FontAwesome6 name="ellipsis-vertical" size={20} color={colors.secondaryText} />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 }
@@ -76,5 +89,11 @@ const styles = StyleSheet.create({
   fileDetail: {
     fontSize: 13,
     fontWeight: '400',
+  },
+  moreButton: {
+    marginLeft: 12,
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

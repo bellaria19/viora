@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
 import Pdf from 'react-native-pdf';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface PDFViewerProps {
   uri: string;
@@ -66,7 +67,7 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
   const sections: SettingsSection[] = useMemo(
     () => [
       {
-        title: '보기 모드',
+        title: '뷰어 설정',
         data: [
           {
             key: 'viewMode',
@@ -82,12 +83,24 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             key: 'enableRTL',
             type: 'switch',
             value: pdfViewerOptions.enableRTL,
-            label: 'RTL 방향 (오른쪽에서 왼쪽)',
+            label: 'RTL 방향 (오른쪽→왼쪽)',
           },
         ],
       },
       {
-        title: '조작 및 확대',
+        title: '표시 설정',
+        data: [
+          {
+            key: 'backgroundColor',
+            type: 'color-group',
+            value: pdfViewerOptions.backgroundColor,
+            label: '배경 색상',
+            colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+          },
+        ],
+      },
+      {
+        title: '성능 설정',
         data: [
           {
             key: 'enableDoubleTapZoom',
@@ -95,11 +108,6 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             value: pdfViewerOptions.enableDoubleTapZoom,
             label: '더블 탭 확대/축소',
           },
-        ],
-      },
-      {
-        title: '성능',
-        data: [
           {
             key: 'enableCache',
             type: 'switch',
@@ -113,13 +121,13 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
   );
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: pdfViewerOptions.backgroundColor }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
-        <View style={[styles.container, { backgroundColor: 'black' }]}>
+        <View style={styles.container}>
           <Pdf
             ref={pdfRef}
             source={{ uri }}
-            style={styles.pdf}
+            style={[styles.pdf, { backgroundColor: pdfViewerOptions.backgroundColor }]}
             enablePaging={pdfEnablePaging}
             horizontal={pdfHorizontal}
             onPageChanged={(page, numberOfPages) => {
@@ -149,7 +157,7 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
         sections={sections}
         onOptionChange={handleOptionChange}
       />
-    </>
+    </SafeAreaView>
   );
 }
 

@@ -343,19 +343,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
   const sections: SettingsSection[] = useMemo(
     () => [
       {
-        title: '테마',
-        data: [
-          {
-            key: 'theme',
-            type: 'button-group',
-            value: textViewerOptions.theme,
-            label: '테마',
-            options: THEMES.map((t) => ({ value: t.value, label: t.label })),
-          },
-        ],
-      },
-      {
-        title: '글꼴',
+        title: '글꼴 설정',
         data: [
           {
             key: 'fontFamily',
@@ -364,62 +352,78 @@ export default function TextViewer({ uri }: TextViewerProps) {
             label: '글꼴',
             options: FONTS.map((f) => ({ value: f.value, label: f.label })),
           },
+          //   {
+          //     key: 'fontSize',
+          //     type: 'stepper',
+          //     value: textViewerOptions.fontSize,
+          //     label: '글자 크기',
+          //     min: 16,
+          //     max: 34,
+          //     step: 2,
+          //     unit: 'px',
+          //   },
+          //   {
+          //     key: 'lineHeight',
+          //     type: 'stepper',
+          //     value: textViewerOptions.lineHeight,
+          //     label: '줄 간격',
+          //     min: 1.0,
+          //     max: 2.5,
+          //     step: 0.1,
+          //   },
         ],
       },
       {
-        title: '글자 크기',
+        title: '텍스트 표시',
         data: [
           {
-            key: 'fontSize',
-            type: 'stepper',
-            value: textViewerOptions.fontSize,
-            label: '글자 크기',
-            min: 16,
-            max: 34,
-            step: 2,
-            unit: 'px',
+            key: 'theme',
+            type: 'button-group',
+            value: textViewerOptions.theme,
+            label: '테마',
+            options: THEMES.map((t) => ({ value: t.value, label: t.label })),
+          },
+          {
+            key: 'textColor',
+            type: 'color-group',
+            value: textViewerOptions.textColor,
+            label: '글자 색상',
+            colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+          },
+          {
+            key: 'backgroundColor',
+            type: 'color-group',
+            value: textViewerOptions.backgroundColor,
+            label: '배경 색상',
+            colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
           },
         ],
       },
-      {
-        title: '줄 간격',
-        data: [
-          {
-            key: 'lineHeight',
-            type: 'stepper',
-            value: textViewerOptions.lineHeight,
-            label: '줄 간격',
-            min: 1.0,
-            max: 2.5,
-            step: 0.1,
-          },
-        ],
-      },
-      {
-        title: '여백',
-        data: [
-          {
-            key: 'marginHorizontal',
-            type: 'stepper',
-            value: textViewerOptions.marginHorizontal,
-            label: '가로 여백',
-            min: 0,
-            max: 40,
-            step: 2,
-            unit: 'px',
-          },
-          {
-            key: 'marginVertical',
-            type: 'stepper',
-            value: textViewerOptions.marginVertical,
-            label: '세로 여백',
-            min: 0,
-            max: 40,
-            step: 2,
-            unit: 'px',
-          },
-        ],
-      },
+      // {
+      //   title: '여백',
+      //   data: [
+      //     {
+      //       key: 'marginHorizontal',
+      //       type: 'stepper',
+      //       value: textViewerOptions.marginHorizontal,
+      //       label: '가로 여백',
+      //       min: 0,
+      //       max: 40,
+      //       step: 2,
+      //       unit: 'px',
+      //     },
+      //     {
+      //       key: 'marginVertical',
+      //       type: 'stepper',
+      //       value: textViewerOptions.marginVertical,
+      //       label: '세로 여백',
+      //       min: 0,
+      //       max: 40,
+      //       step: 2,
+      //       unit: 'px',
+      //     },
+      //   ],
+      // },
     ],
     [textViewerOptions],
   );
@@ -506,19 +510,18 @@ export default function TextViewer({ uri }: TextViewerProps) {
     );
   }
 
-  // measuring(페이지 분할 중)일 때도 로딩 인디케이터 표시
-  if (measuring) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
-        <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
-          <ActivityIndicator size="large" color="#2196F3" />
-          <Text style={[styles.statusText, { color: themeStyles.textColor }]}>
-            페이지를 계산하는 중...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // if (measuring) {
+  //   return (
+  //     <SafeAreaView style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
+  //       <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
+  //         <ActivityIndicator size="large" color="#2196F3" />
+  //         <Text style={[styles.statusText, { color: themeStyles.textColor }]}>
+  //           텍스트 파일을 불러오는 중...
+  //         </Text>
+  //       </View>
+  //     </SafeAreaView>
+  //   );
+  // }
 
   if (error) {
     return (

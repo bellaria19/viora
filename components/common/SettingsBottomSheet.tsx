@@ -1,3 +1,8 @@
+import ButtonGroup from '@/components/settings/ButtonGroup';
+import ColorPicker from '@/components/settings/ColorPicker';
+import SettingItem from '@/components/settings/SettingItem';
+import SettingsSection from '@/components/settings/SettingsSection';
+import StepperControl from '@/components/settings/StepperControl';
 import { FontAwesome6 } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useEffect, useRef } from 'react';
@@ -6,10 +11,7 @@ import {
   Easing,
   Modal,
   Platform,
-  Pressable,
-  SectionList,
-  SectionListData,
-  SectionListRenderItem,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -30,6 +32,7 @@ export interface SettingOption {
   unit?: string; // slider, stepper
   colorOptions?: string[]; // color-group
   icon?: string; // button-group
+  description?: string; // switch 등에서 사용
 }
 
 export interface SettingsSection {
@@ -74,169 +77,115 @@ export default function SettingsBottomSheet({
     }
   }, [isVisible, translateY]);
 
-  // 섹션 헤더 렌더러
-  const renderSectionHeader = ({ section }: { section: SectionListData<SettingOption> }) => (
-    <Text style={styles.sectionTitle}>{(section as any).title}</Text>
-  );
-
-  // 옵션별 렌더러
-  const renderItem: SectionListRenderItem<SettingOption> = ({ item }) => {
-    switch (item.type) {
+  // 옵션 타입별로 알맞은 컴포넌트 반환
+  function renderOption(option: SettingOption) {
+    switch (option.type) {
       case 'button-group':
         return (
-          <View style={styles.buttonGroupRow}>
-            {item.options?.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={[styles.button, item.value === opt.value && styles.buttonActive]}
-                onPress={() => onOptionChange(item.key, opt.value)}
-              >
-                {opt.icon && (
-                  <FontAwesome6
-                    name={opt.icon as any}
-                    size={16}
-                    color={item.value === opt.value ? '#fff' : '#666'}
-                    style={{ marginRight: 6 }}
-                  />
-                )}
-                <Text
-                  style={[styles.buttonText, item.value === opt.value && styles.buttonTextActive]}
-                >
-                  {opt.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        );
-      case 'slider':
-        return (
-          <View style={styles.sliderRow}>
-            <Text style={styles.sliderLabel}>{item.label}</Text>
-            <Slider
-              style={styles.slider}
-              minimumValue={item.min ?? 0}
-              maximumValue={item.max ?? 100}
-              step={item.step ?? 1}
-              value={item.value}
-              onValueChange={(value) => onOptionChange(item.key, value)}
-              minimumTrackTintColor="#007AFF"
-              maximumTrackTintColor="#ddd"
-              thumbTintColor="#007AFF"
+          <SettingItem label={option.label ?? ''}>
+            <ButtonGroup
+              value={option.value}
+              options={option.options ?? []}
+              onChange={(value) => onOptionChange(option.key, value)}
             />
-            <Text style={styles.sliderValue}>
-              {item.value}
-              {item.unit ?? ''}
-            </Text>
-          </View>
-        );
-      case 'switch':
-        return (
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>{item.label}</Text>
-            <Switch
-              value={item.value}
-              onValueChange={(value) => onOptionChange(item.key, value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
-            />
-          </View>
+          </SettingItem>
         );
       case 'color-group':
         return (
-          <View style={styles.colorGroupRow}>
-            <Text style={styles.colorLabel}>{item.label}</Text>
-            <View style={styles.colorOptionsRow}>
-              {item.colorOptions?.map((color) => (
-                <TouchableOpacity
-                  key={color}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: color === 'transparent' ? 'white' : color },
-                    item.value === color && styles.selectedColorOption,
-                  ]}
-                  onPress={() => onOptionChange(item.key, color)}
-                >
-                  {color === 'transparent' && <FontAwesome6 name="slash" size={16} color="#ddd" />}
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
+          <SettingItem label={option.label ?? ''}>
+            <ColorPicker
+              value={option.value}
+              options={option.colorOptions ?? []}
+              onChange={(value) => onOptionChange(option.key, value)}
+            />
+          </SettingItem>
+        );
+      case 'switch':
+        return (
+          <SettingItem label={option.label ?? ''} description={option.description}>
+            <Switch
+              value={option.value}
+              onValueChange={(value) => onOptionChange(option.key, value)}
+              trackColor={{ false: '#ddd', true: '#007AFF' }}
+            />
+          </SettingItem>
         );
       case 'stepper':
         return (
-          <View style={styles.stepperRow}>
-            <Text style={styles.stepperLabel}>{item.label}</Text>
-            <View style={styles.stepperControl}>
-              <TouchableOpacity
-                style={styles.stepperButton}
-                onPress={() =>
-                  onOptionChange(
-                    item.key,
-                    Math.max(
-                      item.min ?? 0,
-                      Math.round((item.value - (item.step ?? 1)) * 1000) / 1000,
-                    ),
-                  )
-                }
-                disabled={item.value <= (item.min ?? 0)}
-              >
-                <Text style={styles.stepperButtonText}>-</Text>
-              </TouchableOpacity>
-              <Text style={styles.stepperValue}>
-                {/* px 대신 1~10 단계로 표시, 단 lineHeight와 marginHorizontal는 실제 값 그대로 */}
-                {item.key === 'lineHeight' ||
-                item.key === 'marginHorizontal' ||
-                item.key === 'marginVertical'
-                  ? item.value + (item.unit ?? '')
-                  : item.min !== undefined && item.max !== undefined && item.step !== undefined
-                    ? Math.round((item.value - item.min) / item.step) + 1
-                    : item.value}
+          <SettingItem label={option.label ?? ''}>
+            <StepperControl
+              value={option.value}
+              min={option.min ?? 0}
+              max={option.max ?? 100}
+              step={option.step ?? 1}
+              unit={option.unit}
+              onChange={(value) => onOptionChange(option.key, value)}
+            />
+          </SettingItem>
+        );
+      case 'slider':
+        return (
+          <SettingItem label={option.label ?? ''}>
+            <View style={styles.sliderRow}>
+              <Slider
+                style={styles.slider}
+                minimumValue={option.min ?? 0}
+                maximumValue={option.max ?? 100}
+                step={option.step ?? 1}
+                value={option.value}
+                onValueChange={(value) => onOptionChange(option.key, value)}
+                minimumTrackTintColor="#007AFF"
+                maximumTrackTintColor="#ddd"
+                thumbTintColor="#007AFF"
+              />
+              <Text style={styles.sliderValue}>
+                {option.value}
+                {option.unit ?? ''}
               </Text>
-              <TouchableOpacity
-                style={styles.stepperButton}
-                onPress={() =>
-                  onOptionChange(
-                    item.key,
-                    Math.min(
-                      item.max ?? 100,
-                      Math.round((item.value + (item.step ?? 1)) * 1000) / 1000,
-                    ),
-                  )
-                }
-                disabled={item.value >= (item.max ?? 100)}
-              >
-                <Text style={styles.stepperButtonText}>+</Text>
-              </TouchableOpacity>
             </View>
-          </View>
+          </SettingItem>
         );
       default:
         return null;
     }
-  };
+  }
 
   return (
-    <Modal visible={isVisible} animationType="fade" transparent onRequestClose={onClose}>
-      {/* 백드롭 */}
-      <Pressable style={styles.backdrop} onPress={onClose} />
-      {/* 바텀시트 */}
-      <Animated.View
-        style={[styles.modalSheet, { backgroundColor: '#fff', transform: [{ translateY }] }]}
-      >
-        <View style={[styles.header, { borderBottomColor: '#ddd' }]}>
-          <Text style={[styles.title]}>{title}</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <FontAwesome6 name="xmark" size={20} color="#666" />
-          </TouchableOpacity>
-        </View>
-        <SectionList
-          sections={sections}
-          renderItem={renderItem}
-          renderSectionHeader={renderSectionHeader}
-          contentContainerStyle={styles.contentContainer}
-          stickySectionHeadersEnabled={false}
-          showsVerticalScrollIndicator={false}
-        />
-      </Animated.View>
+    <Modal visible={isVisible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <Animated.View
+          style={{
+            backgroundColor: '#fff',
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            transform: [{ translateY }],
+            maxHeight: '90%',
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              margin: 16,
+            }}
+          >
+            <Text style={{ fontSize: 20, fontWeight: 'bold', margin: 16 }}>{title}</Text>
+            <TouchableOpacity onPress={onClose} style={{ padding: 8 }}>
+              <FontAwesome6 name="xmark" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+          <ScrollView>
+            {sections.map((section) => (
+              <SettingsSection key={section.title} title={section.title}>
+                {section.data.map((option) => (
+                  <View key={option.key}>{renderOption(option)}</View>
+                ))}
+              </SettingsSection>
+            ))}
+          </ScrollView>
+        </Animated.View>
+      </View>
     </Modal>
   );
 }

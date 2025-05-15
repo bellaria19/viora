@@ -1,188 +1,283 @@
 import AboutModal from '@/components/settings/AboutModal';
-import SettingsCard from '@/components/settings/SettingsCard';
-import EpubSettings from '@/components/settings/tabs/EpubSettings';
-import GeneralSettings from '@/components/settings/tabs/GeneralSettings';
-import ImageSettings from '@/components/settings/tabs/ImageSettings';
-import PDFSettings from '@/components/settings/tabs/PDFSettings';
-import TextSettings from '@/components/settings/tabs/TextSettings';
 import { colors } from '@/constants/colors';
-import { THEMES } from '@/constants/option';
-import { useViewerSettings } from '@/hooks/useViewerSettings';
-import * as Haptics from 'expo-haptics';
+import { resetAllFiles } from '@/utils/fileManager';
+import { FontAwesome6 } from '@expo/vector-icons';
+import { Route, router } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, SectionList, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
-// 탭 유형 정의
-type SettingsTab = 'general' | 'text' | 'image' | 'pdf' | 'epub';
+// 설정 항목 타입 정의
+type SettingItemType = {
+  id: string;
+  title: string;
+  icon: string;
+  iconColor?: string;
+  rightElement?: 'chevron' | 'switch';
+  route?: string;
+  dangerAction?: boolean;
+  onPress?: () => void;
+  switchValue?: boolean;
+  onToggle?: (value: boolean) => void;
+};
+
+// 설정 섹션 타입 정의
+type SettingSectionType = {
+  title: string;
+  data: SettingItemType[];
+};
 
 export default function SettingsScreen() {
-  const {
-    imageViewerOptions,
-    updateImageViewerOptions,
-    pdfViewerOptions,
-    updatePDFViewerOptions,
-    textViewerOptions,
-    updateTextViewerOptions,
-    epubViewerOptions,
-    updateEPUBViewerOptions,
-  } = useViewerSettings();
-
-  // 활성 탭 상태
-  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [aboutVisible, setAboutVisible] = useState(false);
 
-  // 설정 변경 핸들러
-  const handleTextSettingChange = useCallback(
-    (key: string, value: any) => {
-      if (key === 'theme') {
-        const themeObj = THEMES.find((t) => t.value === value);
-        updateTextViewerOptions({
-          theme: value,
-          backgroundColor: themeObj?.bgColor,
-          textColor: themeObj?.textColor,
-        });
-      } else {
-        updateTextViewerOptions({ [key]: value });
-      }
-    },
-    [updateTextViewerOptions],
-  );
-
-  const handlePdfSettingChange = useCallback(
-    (key: string, value: any) => {
-      updatePDFViewerOptions({ [key]: value });
-    },
-    [updatePDFViewerOptions],
-  );
-
-  const handleImageSettingChange = useCallback(
-    (key: string, value: any) => {
-      updateImageViewerOptions({ [key]: value });
-    },
-    [updateImageViewerOptions],
-  );
-
-  const handleEpubSettingChange = useCallback(
-    (key: string, value: any) => {
-      updateEPUBViewerOptions({ [key]: value });
-    },
-    [updateEPUBViewerOptions],
-  );
-
-  // 탭 항목
-  const tabs: { id: SettingsTab; title: string; icon: string }[] = [
-    { id: 'general', title: '일반', icon: 'gear' },
-    { id: 'text', title: '텍스트', icon: 'file-lines' },
-    { id: 'image', title: '이미지', icon: 'image' },
-    { id: 'pdf', title: 'PDF', icon: 'file-pdf' },
-    { id: 'epub', title: 'EPUB', icon: 'book' },
-  ];
-
-  // 공통 옵션
-  const colorOptions = ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'];
-
-  // FlatList 렌더링 최적화
-  const renderTab = useCallback(
-    ({ item }: { item: { id: string; title: string; icon: string } }) => (
-      <SettingsCard
-        title={item.title}
-        icon={item.icon}
-        onPress={() => {
-          setActiveTab(item.id as SettingsTab);
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(console.error);
-        }}
-        selected={activeTab === item.id}
-      />
-    ),
-    [activeTab],
-  );
-
-  // 키 추출기
-  const keyExtractor = useCallback((item: { id: string }) => item.id, []);
-
-  // AboutModal 표시 핸들러
-  const handleShowAbout = useCallback(() => {
-    setAboutVisible(true);
+  // 앱 초기화 핸들러
+  const handleResetFiles = useCallback(() => {
+    Alert.alert('파일 초기화', '모든 파일이 삭제됩니다. 계속하시겠습니까?', [
+      {
+        text: '취소',
+        style: 'cancel',
+      },
+      {
+        text: '초기화',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await resetAllFiles();
+            Alert.alert('완료', '모든 파일이 초기화되었습니다.');
+          } catch (error) {
+            Alert.alert('오류', '파일 초기화 중 오류가 발생했습니다.');
+          }
+        },
+      },
+    ]);
   }, []);
 
+  // 각 항목 클릭 핸들러
+  const handleItemPress = useCallback((item: SettingItemType) => {
+    if (item.onPress) {
+      item.onPress();
+      return;
+    }
+
+    if (item.route) {
+      router.push(item.route as Route);
+    }
+  }, []);
+
+  // 설정 섹션 데이터
+  const sections: SettingSectionType[] = [
+    {
+      title: '앱 설정',
+      data: [
+        {
+          id: 'darkMode',
+          title: '다크 모드',
+          icon: 'moon',
+          rightElement: 'switch',
+          switchValue: isDarkMode,
+          onToggle: setIsDarkMode,
+        },
+      ],
+    },
+    {
+      title: '뷰어 설정',
+      data: [
+        {
+          id: 'textSettings',
+          title: '텍스트 뷰어 설정',
+          icon: 'file-lines',
+          rightElement: 'chevron',
+          route: '/settings/text',
+        },
+        {
+          id: 'imageSettings',
+          title: '이미지 뷰어 설정',
+          icon: 'image',
+          rightElement: 'chevron',
+          route: '/settings/image',
+        },
+        {
+          id: 'pdfSettings',
+          title: 'PDF 뷰어 설정',
+          icon: 'file-pdf',
+          rightElement: 'chevron',
+          route: '/settings/pdf',
+        },
+        {
+          id: 'epubSettings',
+          title: 'EPUB 뷰어 설정',
+          icon: 'book',
+          rightElement: 'chevron',
+          route: '/settings/epub',
+        },
+      ],
+    },
+    {
+      title: '파일 관리',
+      data: [
+        {
+          id: 'reset',
+          title: '모든 파일 초기화',
+          icon: 'trash',
+          iconColor: colors.errorText,
+          dangerAction: true,
+          onPress: handleResetFiles,
+        },
+      ],
+    },
+    {
+      title: '정보',
+      data: [
+        {
+          id: 'about',
+          title: '앱 정보',
+          icon: 'circle-info',
+          rightElement: 'chevron',
+          onPress: () => setAboutVisible(true),
+        },
+        {
+          id: 'feedback',
+          title: '피드백 보내기',
+          icon: 'envelope',
+          rightElement: 'chevron',
+          route: '/settings/feedback',
+        },
+      ],
+    },
+  ];
+
+  // 설정 항목 렌더링 함수 (섹션 타이틀 제외)
+  const renderSettingItem = useCallback(
+    ({ item }: { item: SettingItemType }) => (
+      <TouchableOpacity
+        style={[styles.settingItem, item.dangerAction && styles.dangerItem]}
+        onPress={() => handleItemPress(item)}
+        activeOpacity={0.7}
+        disabled={item.rightElement === 'switch'}
+      >
+        <View style={styles.settingItemLeft}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: item.iconColor ? `${item.iconColor}15` : `${colors.primary}15` },
+            ]}
+          >
+            <FontAwesome6 name={item.icon} size={16} color={item.iconColor || colors.primary} />
+          </View>
+          <Text style={[styles.settingItemTitle, item.dangerAction && { color: colors.errorText }]}>
+            {item.title}
+          </Text>
+        </View>
+        <View style={styles.settingItemRight}>
+          {item.rightElement === 'chevron' && (
+            <FontAwesome6 name="chevron-right" size={14} color={colors.secondaryText} />
+          )}
+          {item.rightElement === 'switch' && (
+            <Switch
+              value={item.switchValue || false}
+              onValueChange={item.onToggle}
+              trackColor={{ false: colors.border, true: colors.primary }}
+            />
+          )}
+        </View>
+      </TouchableOpacity>
+    ),
+    [handleItemPress],
+  );
+
+  // 섹션 헤더 렌더링 함수
+  const renderSectionHeader = useCallback(
+    ({ section: { title } }: { section: { title: string } }) => (
+      <View style={styles.sectionTitleContainer}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
+    ),
+    [],
+  );
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* 탭 메뉴 */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>설정</Text>
-      </View>
-
-      {/* 탭 선택 */}
-      <View style={styles.tabsContainer}>
-        <FlatList
-          data={tabs}
-          renderItem={renderTab}
-          keyExtractor={keyExtractor}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsList}
-        />
-      </View>
-
-      {/* 탭 컨텐츠 */}
-      <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
-        {activeTab === 'general' && <GeneralSettings onShowAbout={handleShowAbout} />}
-        {activeTab === 'text' && (
-          <TextSettings
-            options={textViewerOptions}
-            onOptionChange={handleTextSettingChange}
-            colorOptions={colorOptions}
-          />
-        )}
-        {activeTab === 'image' && (
-          <ImageSettings
-            options={imageViewerOptions}
-            onOptionChange={handleImageSettingChange}
-            colorOptions={colorOptions}
-          />
-        )}
-        {activeTab === 'pdf' && (
-          <PDFSettings options={pdfViewerOptions} onOptionChange={handlePdfSettingChange} />
-        )}
-        {activeTab === 'epub' && (
-          <EpubSettings
-            options={epubViewerOptions}
-            onOptionChange={handleEpubSettingChange}
-            colorOptions={colorOptions}
-          />
-        )}
-      </ScrollView>
-
-      {/* 정보 모달 */}
+    <View style={{ flex: 1 }}>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item) => item.id}
+        renderItem={renderSettingItem}
+        renderSectionHeader={renderSectionHeader}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        stickySectionHeadersEnabled={false}
+      />
       <AboutModal visible={aboutVisible} onClose={() => setAboutVisible(false)} />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   header: {
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    backgroundColor: colors.card,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     color: colors.text,
   },
-  tabsContainer: {
-    marginVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+  listContent: {
+    paddingBottom: 30,
   },
-  tabsList: {
+  sectionTitleContainer: {
+    backgroundColor: colors.background,
     paddingHorizontal: 16,
-    paddingBottom: 10,
-    gap: 10,
+    paddingTop: 24,
+    paddingBottom: 8,
   },
-  contentContainer: {
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: colors.background,
+  },
+  dangerItem: {
+    // borderBottomWidth: 0, // 구분선 FlatList에서 처리
+  },
+  settingItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  iconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  settingItemTitle: {
+    fontSize: 16,
+    color: colors.text,
+  },
+  settingItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  separator: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: 68, // 아이콘 영역만큼 들여쓰기
   },
 });

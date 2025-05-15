@@ -1,7 +1,10 @@
 import FloatingButton from '@/components/common/FloatingButton';
+import DeleteFileModal from '@/components/files/DeleteFileModal';
 import DuplicateFileModal from '@/components/files/DuplicateModal';
 import EmptyFileList from '@/components/files/EmptyFileList';
+import FileActionSheet from '@/components/files/FileActionSheet';
 import FileItem from '@/components/files/FileItem';
+import RenameFileModal from '@/components/files/RenameFileModal';
 import SearchBar from '@/components/files/SearchBar';
 import SortButton from '@/components/files/SortButton';
 import SortMenu from '@/components/files/SortMenu';
@@ -9,11 +12,11 @@ import { colors } from '@/constants/colors';
 import { useFilePicker } from '@/hooks/useFilePicker';
 import { FileInfo } from '@/types/files';
 import { SortOption } from '@/types/sort';
-import { getDirectoryContents } from '@/utils/fileManager';
+import { deleteFile, getDirectoryContents, renameFile } from '@/utils/fileManager';
 import { sortFiles } from '@/utils/sorting';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FilesScreen() {
@@ -23,6 +26,13 @@ export default function FilesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>(SortOption.DATE_DESC);
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<FileInfo | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [fileToRename, setFileToRename] = useState<FileInfo | null>(null);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renameInput, setRenameInput] = useState('');
+  const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
 
   const {
     showDuplicateModal,
@@ -76,6 +86,75 @@ export default function FilesScreen() {
     });
   }, []);
 
+  const handleDeleteConfirm = async () => {
+    if (!fileToDelete) return;
+    try {
+      await deleteFile(fileToDelete.uri);
+      setFileToDelete(null);
+      setShowDeleteModal(false);
+      await loadFiles();
+    } catch (e) {
+      Alert.alert('삭제 실패', '파일 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setFileToDelete(null);
+    setShowDeleteModal(false);
+  };
+
+  const handleRenameInputChange = (text: string) => {
+    setRenameInput(text);
+  };
+
+  const handleRenameConfirm = async () => {
+    if (!fileToRename) return;
+    const trimmed = renameInput.trim();
+    if (!trimmed || trimmed === fileToRename.name) {
+      setShowRenameModal(false);
+      setFileToRename(null);
+      return;
+    }
+    try {
+      await renameFile(fileToRename.uri, trimmed);
+      setShowRenameModal(false);
+      setFileToRename(null);
+      await loadFiles();
+    } catch (e) {
+      Alert.alert('이름 변경 실패', '파일 이름 변경 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleRenameCancel = () => {
+    setShowRenameModal(false);
+    setFileToRename(null);
+  };
+
+  const handleMorePress = useCallback((file: FileInfo) => {
+    setSelectedFile(file);
+    setShowActionSheet(true);
+  }, []);
+
+  const handleActionSheetClose = () => {
+    setShowActionSheet(false);
+    setSelectedFile(null);
+  };
+
+  const handleActionSheetRename = () => {
+    if (!selectedFile) return;
+    setShowActionSheet(false);
+    setFileToRename(selectedFile);
+    setRenameInput(selectedFile.name);
+    setShowRenameModal(true);
+  };
+
+  const handleActionSheetDelete = () => {
+    if (!selectedFile) return;
+    setShowActionSheet(false);
+    setFileToDelete(selectedFile);
+    setShowDeleteModal(true);
+  };
+
   const renderHeader = () => (
     <View style={[styles.sectionCard, styles.searchRow]}>
       <View style={{ flex: 1 }}>
@@ -99,7 +178,14 @@ export default function FilesScreen() {
           <FlatList
             data={filteredFiles}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            renderItem={({ item }) => <FileItem file={item} onPress={handleFilePress} showSize />}
+            renderItem={({ item }) => (
+              <FileItem
+                file={item}
+                onPress={handleFilePress}
+                showSize
+                onMorePress={handleMorePress}
+              />
+            )}
             ListEmptyComponent={() =>
               searchQuery ? (
                 <EmptyFileList
@@ -138,6 +224,29 @@ export default function FilesScreen() {
           totalCount={duplicateFiles.length}
           onSkip={handleDuplicateSkip}
           onOverwrite={handleDuplicateOverwrite}
+        />
+
+        <FileActionSheet
+          visible={showActionSheet}
+          fileName={selectedFile?.name}
+          onRename={handleActionSheetRename}
+          onDelete={handleActionSheetDelete}
+          onClose={handleActionSheetClose}
+        />
+
+        <RenameFileModal
+          visible={showRenameModal}
+          value={renameInput}
+          onChange={handleRenameInputChange}
+          onCancel={handleRenameCancel}
+          onConfirm={handleRenameConfirm}
+        />
+
+        <DeleteFileModal
+          visible={showDeleteModal}
+          fileName={fileToDelete?.name}
+          onCancel={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
         />
       </View>
     </SafeAreaView>

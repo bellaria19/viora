@@ -1,0 +1,133 @@
+import ButtonGroup from '@/components/settings/ButtonGroup';
+import ColorPicker from '@/components/settings/ColorPicker';
+import SettingItem from '@/components/settings/SettingItem';
+import SettingsSection from '@/components/settings/SettingsSection';
+import SliderControl from '@/components/settings/SliderControl';
+import { colors } from '@/constants/colors';
+import { FONTS, THEMES } from '@/constants/option';
+import { useViewerSettings } from '@/hooks/useViewerSettings';
+import { useCallback } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+export default function TextSettingsScreen() {
+  const { textViewerOptions, updateTextViewerOptions } = useViewerSettings();
+
+  // 설정 변경 핸들러
+  const handleOptionChange = useCallback(
+    (key: string, value: any) => {
+      if (key === 'theme') {
+        const themeObj = THEMES.find((t) => t.value === value);
+        updateTextViewerOptions({
+          theme: value,
+          backgroundColor: themeObj?.bgColor,
+          textColor: themeObj?.textColor,
+        });
+      } else {
+        updateTextViewerOptions({ [key]: value });
+      }
+    },
+    [updateTextViewerOptions],
+  );
+
+  // 색상 옵션
+  const colorOptions = ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'];
+
+  return (
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <SettingsSection title="글꼴 설정">
+          <SettingItem label="글꼴">
+            <ButtonGroup
+              value={textViewerOptions.fontFamily}
+              options={FONTS.map((f) => ({ value: f.value, label: f.label }))}
+              onChange={(value) => handleOptionChange('fontFamily', value)}
+            />
+          </SettingItem>
+
+          <SettingItem label="글자 크기">
+            <SliderControl
+              value={textViewerOptions.fontSize}
+              min={16}
+              max={34}
+              step={2}
+              unit="px"
+              onChange={(value) => handleOptionChange('fontSize', value)}
+            />
+          </SettingItem>
+
+          <SettingItem label="줄 간격">
+            <SliderControl
+              value={textViewerOptions.lineHeight}
+              min={1.0}
+              max={2.5}
+              step={0.1}
+              formatValue={(value) => value.toFixed(1)}
+              onChange={(value) => handleOptionChange('lineHeight', value)}
+            />
+          </SettingItem>
+        </SettingsSection>
+
+        <SettingsSection title="텍스트 표시">
+          <SettingItem label="테마">
+            <ButtonGroup
+              value={textViewerOptions.theme}
+              options={THEMES.map((t) => ({ value: t.value, label: t.label }))}
+              onChange={(value) => handleOptionChange('theme', value)}
+            />
+          </SettingItem>
+
+          <SettingItem label="글자 색상">
+            <ColorPicker
+              value={textViewerOptions.textColor}
+              options={colorOptions}
+              onChange={(value) => handleOptionChange('textColor', value)}
+            />
+          </SettingItem>
+
+          <SettingItem label="배경 색상">
+            <ColorPicker
+              value={textViewerOptions.backgroundColor}
+              options={colorOptions}
+              onChange={(value) => handleOptionChange('backgroundColor', value)}
+            />
+          </SettingItem>
+        </SettingsSection>
+
+        <SettingsSection title="여백">
+          <SettingItem label="가로 여백">
+            <SliderControl
+              value={textViewerOptions.marginHorizontal}
+              min={0}
+              max={40}
+              step={2}
+              unit="px"
+              onChange={(value) => handleOptionChange('marginHorizontal', value)}
+            />
+          </SettingItem>
+
+          <SettingItem label="세로 여백">
+            <SliderControl
+              value={textViewerOptions.marginVertical}
+              min={0}
+              max={40}
+              step={2}
+              unit="px"
+              onChange={(value) => handleOptionChange('marginVertical', value)}
+            />
+          </SettingItem>
+        </SettingsSection>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
+  },
+});

@@ -48,6 +48,9 @@ export interface PDFViewerOptions extends BaseViewerOptions {
    * 최근 본 페이지 (자동 저장/복원용, UI 노출 X)
    */
   lastPage?: number;
+
+  // 색상 설정
+  backgroundColor: string;
 }
 
 // 텍스트 뷰어 옵션

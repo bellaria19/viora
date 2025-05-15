@@ -8,6 +8,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Dimensions, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -180,7 +181,31 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const sections = useMemo<SettingsSection[]>(
     () => [
       {
-        title: '제스처 설정',
+        title: '표시 설정',
+        data: [
+          {
+            key: 'contentFit',
+            type: 'button-group',
+            value: imageViewerOptions.contentFit,
+            label: '이미지 표시 방식',
+            options: [
+              { value: 'contain', label: 'Contain' },
+              { value: 'cover', label: 'Cover' },
+              { value: 'fill', label: 'Fill' },
+              { value: 'none', label: 'None' },
+            ],
+          },
+          {
+            key: 'backgroundColor',
+            type: 'color-group',
+            value: imageViewerOptions.backgroundColor,
+            label: '배경 색상',
+            colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+          },
+        ],
+      },
+      {
+        title: '기능 설정',
         data: [
           {
             key: 'enableDoubleTapZoom',
@@ -204,35 +229,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
             type: 'switch',
             value: imageViewerOptions.enableCache,
             label: '이미지 캐싱',
-          },
-        ],
-      },
-      {
-        title: '표시 설정',
-        data: [
-          {
-            key: 'contentFit',
-            type: 'button-group',
-            value: imageViewerOptions.contentFit,
-            label: '이미지 표시 방식',
-            options: [
-              { value: 'contain', label: 'Contain' },
-              { value: 'cover', label: 'Cover' },
-              { value: 'fill', label: 'Fill' },
-              { value: 'none', label: 'None' },
-            ],
-          },
-        ],
-      },
-      {
-        title: '색상 설정',
-        data: [
-          {
-            key: 'backgroundColor',
-            type: 'color-group',
-            value: imageViewerOptions.backgroundColor,
-            label: '배경 색상',
-            colorOptions: ['#ffffff', '#000000', '#222222', '#444444', '#666666', '#888888'],
           },
         ],
       },
@@ -263,7 +259,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   );
 
   return (
-    <>
+    <SafeAreaView style={{ flex: 1, backgroundColor: imageViewerOptions.backgroundColor }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={[styles.container, { backgroundColor: imageViewerOptions.backgroundColor }]}>
           <GestureDetector gesture={composed}>
@@ -320,7 +316,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
         sections={sections}
         onOptionChange={handleOptionChange}
       />
-    </>
+    </SafeAreaView>
   );
 }
 

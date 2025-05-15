@@ -1,10 +1,11 @@
+import { FileInfo } from '@/types/files';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 
-export const APP_DIRECTORY = FileSystem.documentDirectory ? `${FileSystem.documentDirectory}viora/` : null;
+export const APP_DIRECTORY = FileSystem.documentDirectory
+  ? `${FileSystem.documentDirectory}viora/`
+  : null;
 const RECENT_FILES_KEY = 'recent_files';
-
-
 
 // 앱 디렉토리 초기화
 export const initializeFileSystem = async () => {
@@ -147,7 +148,9 @@ export const addRecentFile = async (file: FileInfo) => {
 };
 
 // 디렉토리 내 파일 목록 가져오기
-export const getDirectoryContents = async (directory: string = APP_DIRECTORY || ''): Promise<FileInfo[]> => {
+export const getDirectoryContents = async (
+  directory: string = APP_DIRECTORY || '',
+): Promise<FileInfo[]> => {
   try {
     const files = await FileSystem.readDirectoryAsync(directory);
     const fileInfos = await Promise.all(
@@ -189,5 +192,28 @@ export const resetAllFiles = async (): Promise<void> => {
   } catch (error) {
     console.error('Error resetting files:', error);
     throw error;
+  }
+};
+
+// 파일 삭제
+export const deleteFile = async (uri: string): Promise<void> => {
+  try {
+    await FileSystem.deleteAsync(uri, { idempotent: true });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    throw error;
+  }
+};
+
+// 파일명 변경
+export const renameFile = async (oldUri: string, newName: string): Promise<FileInfo | null> => {
+  if (!APP_DIRECTORY) throw new Error('Document directory is not available');
+  try {
+    const newUri = `${APP_DIRECTORY}${newName}`;
+    await FileSystem.moveAsync({ from: oldUri, to: newUri });
+    return await getFileInfo(newUri);
+  } catch (error) {
+    console.error('Error renaming file:', error);
+    return null;
   }
 };

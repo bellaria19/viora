@@ -1,15 +1,16 @@
-import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface ViewerErrorProps {
   message: string;
 }
 
-const ViewerError: React.FC<ViewerErrorProps> = ({ message }) => (
-  <View style={styles.centerContainer}>
-    <Text style={styles.errorText}>{message}</Text>
-  </View>
-);
+export default function ViewerError({ message }: ViewerErrorProps) {
+  return (
+    <View style={styles.centerContainer}>
+      <Text style={styles.errorText}>{message}</Text>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   centerContainer: {
@@ -25,5 +26,3 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
 });
-
-export default ViewerError;

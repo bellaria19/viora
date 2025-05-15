@@ -56,6 +56,7 @@ const defaultPDFViewerOptions: PDFViewerOptions = {
   enableDoubleTapZoom: true,
   theme: 'light',
   lastPage: 1,
+  backgroundColor: '#000',
 };
 
 const defaultImageViewerOptions: ImageViewerOptions = {
@@ -119,7 +120,7 @@ interface ViewerSettingsProviderProps {
   children: React.ReactNode;
 }
 
-export const ViewerSettingsProvider: React.FC<ViewerSettingsProviderProps> = ({ children }) => {
+export default function ViewerSettingsProvider({ children }: ViewerSettingsProviderProps) {
   // 각 뷰어 설정 상태
   const [textViewerOptions, setTextViewerOptions] =
     useState<TextViewerOptions>(defaultTextViewerOptions);
@@ -264,4 +265,4 @@ export const ViewerSettingsProvider: React.FC<ViewerSettingsProviderProps> = ({ 
   return (
     <ViewerSettingsContext.Provider value={contextValue}>{children}</ViewerSettingsContext.Provider>
   );
-};
+}
