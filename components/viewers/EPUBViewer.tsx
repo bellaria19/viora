@@ -1,11 +1,18 @@
 import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
 import ViewerError from '@/components/viewers/ViewerError';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
-import { Reader, ReaderProvider, Section, Themes, useReader } from '@epubjs-react-native/core';
+import { Reader, ReaderProvider, Themes, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
 import { useNavigation } from '@react-navigation/native';
-import { useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Overlay from '../common/Overlay';
 
@@ -26,15 +33,16 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  const epubRef = useRef<any>(null);
   const navigation = useNavigation();
-  const { theme } = useReader();
+  const { theme, goToLocation } = useReader();
 
   // EPUB 뷰어 설정
   const { epubViewerOptions, updateEPUBViewerOptions } = useViewerSettings();
 
-  // 테마 색상
+  // 테마 및 색상 적용 함수
   const getBackgroundColor = () => {
+    // 사용자 지정 배경색 우선, 없으면 테마별 기본값
+    if (epubViewerOptions.backgroundColor) return epubViewerOptions.backgroundColor;
     switch (epubViewerOptions.theme) {
       case 'dark':
         return '#1a1a1a';
@@ -46,6 +54,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
   };
 
   const getTextColor = () => {
+    if (epubViewerOptions.textColor) return epubViewerOptions.textColor;
     switch (epubViewerOptions.theme) {
       case 'dark':
         return '#eee';
@@ -56,44 +65,37 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
     }
   };
 
-  // 설정 섹션 데이터
+  // 설정 섹션 데이터 (epub.tsx와 동일하게 통일)
   const sections: SettingsSection[] = [
     {
-      title: '뷰어 모드',
+      title: '뷰어 설정',
       data: [
         {
           key: 'viewMode',
           type: 'button-group',
           value: epubViewerOptions.viewMode,
+          label: '뷰어 모드',
           options: [
             { value: 'page', label: '페이지', icon: 'file' },
             { value: 'scroll', label: '스크롤', icon: 'scroll' },
           ],
         },
-      ],
-    },
-    {
-      title: '테마',
-      data: [
         {
-          key: 'theme',
-          type: 'button-group',
-          value: epubViewerOptions.theme,
-          options: [
-            { value: 'light', label: '라이트' },
-            { value: 'dark', label: '다크' },
-            { value: 'sepia', label: '세피아' },
-          ],
+          key: 'enableRTL',
+          type: 'switch',
+          value: epubViewerOptions.enableRTL,
+          label: 'RTL 방향 (오른쪽→왼쪽)',
         },
       ],
     },
     {
-      title: '글꼴',
+      title: '글꼴 설정',
       data: [
         {
           key: 'fontFamily',
           type: 'button-group',
           value: epubViewerOptions.fontFamily,
+          label: '글꼴',
           options: [
             { value: 'System', label: '시스템' },
             { value: 'SpaceMono', label: '스페이스 모노' },
@@ -101,29 +103,19 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
             { value: 'Georgia', label: '조지아' },
           ],
         },
-      ],
-    },
-    {
-      title: '글자 크기',
-      data: [
         {
           key: 'fontSize',
-          type: 'slider',
+          type: 'stepper',
           value: epubViewerOptions.fontSize,
           label: '글자 크기',
           min: 12,
-          max: 28,
+          max: 32,
           step: 1,
           unit: 'px',
         },
-      ],
-    },
-    {
-      title: '줄 간격',
-      data: [
         {
           key: 'lineHeight',
-          type: 'slider',
+          type: 'stepper',
           value: epubViewerOptions.lineHeight,
           label: '줄 간격',
           min: 1.0,
@@ -133,11 +125,48 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
       ],
     },
     {
-      title: '여백',
+      title: '표시 설정',
+      data: [
+        {
+          key: 'theme',
+          type: 'button-group',
+          value: epubViewerOptions.theme,
+          label: '테마',
+          options: [
+            { value: 'light', label: '라이트' },
+            { value: 'dark', label: '다크' },
+            { value: 'sepia', label: '세피아' },
+          ],
+        },
+        {
+          key: 'textColor',
+          type: 'color-group',
+          value: epubViewerOptions.textColor,
+          label: '글자 색상',
+          colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+        },
+        {
+          key: 'backgroundColor',
+          type: 'color-group',
+          value: epubViewerOptions.backgroundColor,
+          label: '배경 색상',
+          colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+        },
+        {
+          key: 'linkColor',
+          type: 'color-group',
+          value: epubViewerOptions.linkColor,
+          label: '링크 색상',
+          colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+        },
+      ],
+    },
+    {
+      title: '여백 설정',
       data: [
         {
           key: 'marginHorizontal',
-          type: 'slider',
+          type: 'stepper',
           value: epubViewerOptions.marginHorizontal,
           label: '가로 여백',
           min: 8,
@@ -147,36 +176,13 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
         },
         {
           key: 'marginVertical',
-          type: 'slider',
+          type: 'stepper',
           value: epubViewerOptions.marginVertical,
           label: '세로 여백',
           min: 8,
           max: 40,
           step: 2,
           unit: 'px',
-        },
-      ],
-    },
-    {
-      title: '기능 설정',
-      data: [
-        {
-          key: 'enableRTL',
-          type: 'switch',
-          value: epubViewerOptions.enableRTL,
-          label: 'RTL 방향 (오른쪽→왼쪽)',
-        },
-        {
-          key: 'enableTOC',
-          type: 'switch',
-          value: epubViewerOptions.enableTOC,
-          label: '목차 표시',
-        },
-        {
-          key: 'enableTextSelection',
-          type: 'switch',
-          value: epubViewerOptions.enableTextSelection,
-          label: '텍스트 선택 기능',
         },
       ],
     },
@@ -195,7 +201,10 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ReaderProvider>
-        <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
+        <Pressable
+          style={[styles.container, { backgroundColor: getBackgroundColor() }]}
+          onPress={() => setOverlayVisible(true)}
+        >
           {isLoading && (
             <View style={[styles.loadingContainer, { backgroundColor: getBackgroundColor() }]}>
               <ActivityIndicator size="large" color={getTextColor()} />
@@ -212,17 +221,18 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
             fileSystem={useFileSystem}
             flow={epubViewerOptions.viewMode === 'scroll' ? 'scrolled' : 'paginated'}
             defaultTheme={Themes.LIGHT}
-            onReady={(totalLocations: number, currentLocation: Location, progress: number) => {
+            onReady={(locations) => {
+              console.log('EPUB locations:', locations);
               setIsLoading(false);
-              setTotalPages(totalLocations);
+              if (typeof locations === 'object' && locations !== null && 'total' in locations) {
+                setTotalPages((locations as any).total);
+              } else {
+                setTotalPages(locations);
+              }
             }}
-            onLocationChange={(
-              totalLocations: number,
-              currentLocation: Location,
-              progress: number,
-              currentSection: Section | null,
-            ) => {
-              setCurrentPage(currentLocation?.start?.displayed?.page || 1);
+            onLocationChange={(_locations, location) => {
+              console.log('EPUB location:', location);
+              setCurrentPage(location?.start?.displayed?.page || 1);
             }}
           />
 
@@ -234,17 +244,12 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={(page) => {
-              // spine index로 이동 (goToLocation 사용)
-              if (epubRef.current && epubRef.current.goToLocation) {
-                // cfi 또는 spine index로 이동 (여기선 spine index를 cfi로 변환 필요)
-                // 예시: 1페이지 -> 'epubcfi(/6/2[chapter1]!/4/2/2/1:0)'
-                // 실제 구현에서는 spine 정보를 활용해야 함
-                // 임시로 page number만 set
-                setCurrentPage(page);
+              if (goToLocation) {
+                goToLocation(page.toString());
               }
             }}
           />
-        </View>
+        </Pressable>
 
         <SettingsBottomSheet
           title="EPUB 설정"

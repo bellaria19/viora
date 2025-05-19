@@ -2,9 +2,9 @@ import ButtonGroup from '@/components/settings/ButtonGroup';
 import ColorPicker from '@/components/settings/ColorPicker';
 import SettingItem from '@/components/settings/SettingItem';
 import SettingsSection from '@/components/settings/SettingsSection';
-import SliderControl from '@/components/settings/SliderControl';
+import StepperControl from '@/components/settings/StepperControl';
 import { colors } from '@/constants/colors';
-import { FONTS, THEMES } from '@/constants/option';
+import { COLOR_OPTIONS, FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
@@ -30,9 +30,6 @@ export default function TextSettingsScreen() {
     [updateTextViewerOptions],
   );
 
-  // 색상 옵션
-  const colorOptions = ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'];
-
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -46,7 +43,7 @@ export default function TextSettingsScreen() {
           </SettingItem>
 
           <SettingItem label="글자 크기">
-            <SliderControl
+            <StepperControl
               value={textViewerOptions.fontSize}
               min={16}
               max={34}
@@ -57,7 +54,7 @@ export default function TextSettingsScreen() {
           </SettingItem>
 
           <SettingItem label="줄 간격">
-            <SliderControl
+            <StepperControl
               value={textViewerOptions.lineHeight}
               min={1.0}
               max={2.5}
@@ -80,7 +77,7 @@ export default function TextSettingsScreen() {
           <SettingItem label="글자 색상">
             <ColorPicker
               value={textViewerOptions.textColor}
-              options={colorOptions}
+              options={COLOR_OPTIONS}
               onChange={(value) => handleOptionChange('textColor', value)}
             />
           </SettingItem>
@@ -88,7 +85,7 @@ export default function TextSettingsScreen() {
           <SettingItem label="배경 색상">
             <ColorPicker
               value={textViewerOptions.backgroundColor}
-              options={colorOptions}
+              options={COLOR_OPTIONS}
               onChange={(value) => handleOptionChange('backgroundColor', value)}
             />
           </SettingItem>
@@ -96,7 +93,7 @@ export default function TextSettingsScreen() {
 
         <SettingsSection title="여백">
           <SettingItem label="가로 여백">
-            <SliderControl
+            <StepperControl
               value={textViewerOptions.marginHorizontal}
               min={0}
               max={40}
@@ -107,7 +104,7 @@ export default function TextSettingsScreen() {
           </SettingItem>
 
           <SettingItem label="세로 여백">
-            <SliderControl
+            <StepperControl
               value={textViewerOptions.marginVertical}
               min={0}
               max={40}

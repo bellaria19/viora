@@ -3,6 +3,7 @@ import ColorPicker from '@/components/settings/ColorPicker';
 import SettingItem from '@/components/settings/SettingItem';
 import SettingsSection from '@/components/settings/SettingsSection';
 import { colors } from '@/constants/colors';
+import { COLOR_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Switch } from 'react-native';
@@ -18,9 +19,6 @@ export default function ImageSettingsScreen() {
     },
     [updateImageViewerOptions],
   );
-
-  // 색상 옵션
-  const colorOptions = ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'];
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -42,7 +40,7 @@ export default function ImageSettingsScreen() {
           <SettingItem label="배경 색상">
             <ColorPicker
               value={imageViewerOptions.backgroundColor}
-              options={colorOptions}
+              options={COLOR_OPTIONS}
               onChange={(value) => handleOptionChange('backgroundColor', value)}
             />
           </SettingItem>

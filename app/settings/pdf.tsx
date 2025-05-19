@@ -34,10 +34,7 @@ export default function PdfSettingsScreen() {
             />
           </SettingItem>
 
-          <SettingItem
-            label="RTL 방향 (오른쪽→왼쪽)"
-            description="아랍어, 히브리어와 같은 RTL 언어 지원"
-          >
+          <SettingItem label="RTL 방향 (오른쪽→왼쪽)">
             <Switch
               value={pdfViewerOptions.enableRTL}
               onValueChange={(value) => handleOptionChange('enableRTL', value)}

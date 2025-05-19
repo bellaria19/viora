@@ -10,3 +10,6 @@ export const THEMES = [
   { value: 'dark', label: '다크', bgColor: '#1a1a1a', textColor: '#eee' },
   { value: 'sepia', label: '세피아', bgColor: '#f8f1e3', textColor: '#5b4636' },
 ];
+
+// 색상 옵션
+export const COLOR_OPTIONS = ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'];

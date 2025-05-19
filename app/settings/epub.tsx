@@ -2,9 +2,9 @@ import ButtonGroup from '@/components/settings/ButtonGroup';
 import ColorPicker from '@/components/settings/ColorPicker';
 import SettingItem from '@/components/settings/SettingItem';
 import SettingsSection from '@/components/settings/SettingsSection';
-import SliderControl from '@/components/settings/SliderControl';
+import StepperControl from '@/components/settings/StepperControl';
 import { colors } from '@/constants/colors';
-import { FONTS, THEMES } from '@/constants/option';
+import { COLOR_OPTIONS, FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Switch } from 'react-native';
@@ -20,9 +20,6 @@ export default function EpubSettingsScreen() {
     },
     [updateEPUBViewerOptions],
   );
-
-  // 색상 옵션
-  const colorOptions = ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'];
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -58,7 +55,7 @@ export default function EpubSettingsScreen() {
           </SettingItem>
 
           <SettingItem label="글자 크기">
-            <SliderControl
+            <StepperControl
               value={epubViewerOptions.fontSize}
               min={12}
               max={32}
@@ -69,7 +66,7 @@ export default function EpubSettingsScreen() {
           </SettingItem>
 
           <SettingItem label="줄 간격">
-            <SliderControl
+            <StepperControl
               value={epubViewerOptions.lineHeight}
               min={1.0}
               max={2.5}
@@ -92,7 +89,7 @@ export default function EpubSettingsScreen() {
           <SettingItem label="글자 색상">
             <ColorPicker
               value={epubViewerOptions.textColor}
-              options={colorOptions}
+              options={COLOR_OPTIONS}
               onChange={(value) => handleOptionChange('textColor', value)}
             />
           </SettingItem>
@@ -100,7 +97,7 @@ export default function EpubSettingsScreen() {
           <SettingItem label="배경 색상">
             <ColorPicker
               value={epubViewerOptions.backgroundColor}
-              options={colorOptions}
+              options={COLOR_OPTIONS}
               onChange={(value) => handleOptionChange('backgroundColor', value)}
             />
           </SettingItem>
@@ -108,42 +105,31 @@ export default function EpubSettingsScreen() {
           <SettingItem label="링크 색상">
             <ColorPicker
               value={epubViewerOptions.linkColor}
-              options={colorOptions}
+              options={COLOR_OPTIONS}
               onChange={(value) => handleOptionChange('linkColor', value)}
             />
           </SettingItem>
         </SettingsSection>
 
-        <SettingsSection title="기능 설정">
-          <SettingItem label="목차 표시">
-            <Switch
-              value={epubViewerOptions.enableTOC}
-              onValueChange={(value) => handleOptionChange('enableTOC', value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
+        <SettingsSection title="여백 설정">
+          <SettingItem label="가로 여백">
+            <StepperControl
+              value={epubViewerOptions.marginHorizontal}
+              min={8}
+              max={40}
+              step={2}
+              unit="px"
+              onChange={(value: number) => handleOptionChange('marginHorizontal', value)}
             />
           </SettingItem>
-
-          <SettingItem label="텍스트 선택 기능">
-            <Switch
-              value={epubViewerOptions.enableTextSelection}
-              onValueChange={(value) => handleOptionChange('enableTextSelection', value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
-            />
-          </SettingItem>
-
-          <SettingItem label="북마크 기능">
-            <Switch
-              value={epubViewerOptions.enableBookmark}
-              onValueChange={(value) => handleOptionChange('enableBookmark', value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
-            />
-          </SettingItem>
-
-          <SettingItem label="검색 기능">
-            <Switch
-              value={epubViewerOptions.enableSearch}
-              onValueChange={(value) => handleOptionChange('enableSearch', value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
+          <SettingItem label="세로 여백">
+            <StepperControl
+              value={epubViewerOptions.marginVertical}
+              min={8}
+              max={40}
+              step={2}
+              unit="px"
+              onChange={(value: number) => handleOptionChange('marginVertical', value)}
             />
           </SettingItem>
         </SettingsSection>

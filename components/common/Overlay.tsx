@@ -12,6 +12,9 @@ interface OverlayProps {
   onPageChange?: (page: number) => void;
 }
 
+const BAR_HEIGHT = 64; // topBar의 height와 동일하게 맞춰줍니다.
+const BOTTOM_BAR_HEIGHT = BAR_HEIGHT * 1.5;
+
 export default function Overlay({
   visible,
   onBack,
@@ -33,7 +36,7 @@ export default function Overlay({
           <FontAwesome6 name="gear" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { height: showSlider ? BOTTOM_BAR_HEIGHT : BAR_HEIGHT }]}>
         {showSlider && (
           <>
             <View style={styles.pageNavRow}>
@@ -86,14 +89,15 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingHorizontal: 16,
     paddingBottom: 8,
+    height: BAR_HEIGHT,
   },
   iconButton: {
     padding: 8,
   },
   bottomBar: {
     backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 12,
-    paddingBottom: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   pageNavRow: {
     flexDirection: 'row',
