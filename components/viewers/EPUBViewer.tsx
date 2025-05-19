@@ -222,13 +222,30 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
             flow={epubViewerOptions.viewMode === 'scroll' ? 'scrolled' : 'paginated'}
             defaultTheme={Themes.LIGHT}
             onReady={(locations) => {
-              console.log('EPUB locations:', locations);
               setIsLoading(false);
               if (typeof locations === 'object' && locations !== null && 'total' in locations) {
                 setTotalPages((locations as any).total);
               } else {
                 setTotalPages(locations);
               }
+              // --- 전체 정보 출력 ---
+              const readerProps = {
+                src: uri,
+                width,
+                height: height * 0.9,
+                fileSystem: useFileSystem,
+                flow: epubViewerOptions.viewMode === 'scroll' ? 'scrolled' : 'paginated',
+                defaultTheme: Themes.LIGHT,
+              };
+              console.log('========== EPUB 파일 정보 ==========');
+              console.log('locations:', JSON.stringify(locations, null, 2));
+              console.log('========== EPUB 뷰어 전체 정보 ==========');
+              console.log('epubViewerOptions:', JSON.stringify(epubViewerOptions, null, 2));
+              console.log('readerProps:', JSON.stringify(readerProps, null, 2));
+              console.log('theme:', theme);
+              console.log('goToLocation:', typeof goToLocation);
+              console.log('width:', width, 'height:', height);
+              console.log('====================================');
             }}
             onLocationChange={(_locations, location) => {
               console.log('EPUB location:', location);
