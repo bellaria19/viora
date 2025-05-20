@@ -1,6 +1,5 @@
 import { Overlay, SettingsBottomSheet } from '@/components/common';
 import { SettingsSection } from '@/components/common/SettingsBottomSheet';
-import { ViewerError } from '@/components/viewers';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { Reader, ReaderProvider, Themes, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
@@ -8,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import ViewerError from './ViewerError';
 
 type Location = {
   start?: { displayed?: { page?: number }; cfi?: string };

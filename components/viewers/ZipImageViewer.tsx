@@ -1,8 +1,10 @@
-import { ImageViewer, ViewerError, ViewerLoading } from '@/components/viewers';
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import * as ZipArchive from 'react-native-zip-archive';
+import ImageViewer from './ImageViewer';
+import ViewerError from './ViewerError';
+import ViewerLoading from './ViewerLoading';
 
 interface ZipImageViewerProps {
   uri: string;

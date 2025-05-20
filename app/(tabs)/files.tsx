@@ -25,17 +25,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function FilesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [files, setFiles] = useState<FileInfo[]>([]);
-  const [filteredFiles, setFilteredFiles] = useState<FileInfo[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>(SortOption.DATE_DESC);
   const [showSortMenu, setShowSortMenu] = useState(false);
+
+  const [filteredFiles, setFilteredFiles] = useState<FileInfo[]>([]);
+  const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
+
   const [fileToDelete, setFileToDelete] = useState<FileInfo | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fileToRename, setFileToRename] = useState<FileInfo | null>(null);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renameInput, setRenameInput] = useState('');
-  const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
   const [showOptionModal, setShowOptionModal] = useState(false);
+
+  const [modalState, setModalState] = useState({
+    delete: { show: false, file: null as FileInfo | null },
+    rename: { show: false, file: null as FileInfo | null, input: '' },
+    option: { show: false, file: null as FileInfo | null },
+  });
 
   const {
     showDuplicateModal,
@@ -50,10 +58,10 @@ export default function FilesScreen() {
     onFilesProcessed: () => router.push('/files'),
   });
 
-  const loadFiles = async () => {
+  const loadFiles = useCallback(async () => {
     const files = await getDirectoryContents();
     setFiles(files);
-  };
+  }, [setFiles]);
 
   const filterAndSortFiles = useCallback(() => {
     let filtered = files.filter((file) =>
@@ -65,23 +73,23 @@ export default function FilesScreen() {
 
   useEffect(() => {
     loadFiles();
-  }, []);
+  }, [loadFiles]);
 
   useFocusEffect(
     useCallback(() => {
       loadFiles();
-    }, []),
+    }, [loadFiles]),
   );
 
   useEffect(() => {
     filterAndSortFiles();
   }, [filterAndSortFiles]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadFiles();
     setRefreshing(false);
-  };
+  }, [loadFiles]);
 
   const handleFilePress = useCallback((file: FileInfo) => {
     const extType = getFileType(file.name);

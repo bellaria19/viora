@@ -12,56 +12,62 @@ interface FileItemProps {
   onMorePress?: (file: FileInfo) => void;
 }
 
-export default memo(function FileItem({
-  file,
-  onPress,
-  showSize = false,
-  onMorePress,
-}: FileItemProps) {
-  return (
-    <TouchableOpacity
-      style={[
-        styles.fileItem,
-        {
-          backgroundColor: colors.card,
-          borderColor: colors.border,
-          shadowColor: colors.tabIconDefault,
-        },
-      ]}
-      onPress={() => onPress(file)}
-      activeOpacity={0.85}
-    >
-      <FontAwesome6
-        name={getFileIcon(file.type)}
-        size={28}
-        style={styles.fileIcon}
-        color={colors.primary}
-      />
-      <View style={styles.fileInfo}>
-        <Text style={[styles.fileName, { color: colors.text }]} numberOfLines={1}>
-          {file.name}
-        </Text>
-        <Text style={[styles.fileDetail, { color: colors.secondaryText }]}>
-          {showSize
-            ? `${formatFileSize(file.size)} • ${formatDate(file.modifiedTime)}`
-            : `최근 사용 날짜: ${formatDate(file.modifiedTime)}`}
-        </Text>
-      </View>
-      {onMorePress && (
-        <TouchableOpacity
-          onPress={(e) => {
-            e.stopPropagation();
-            onMorePress(file);
-          }}
-          style={styles.moreButton}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <FontAwesome6 name="ellipsis-vertical" size={20} color={colors.secondaryText} />
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
-});
+export default memo(
+  function FileItem({ file, onPress, showSize = false, onMorePress }: FileItemProps) {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.fileItem,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            shadowColor: colors.tabIconDefault,
+          },
+        ]}
+        onPress={() => onPress(file)}
+        activeOpacity={0.85}
+      >
+        <FontAwesome6
+          name={getFileIcon(file.type)}
+          size={28}
+          style={styles.fileIcon}
+          color={colors.primary}
+        />
+        <View style={styles.fileInfo}>
+          <Text style={[styles.fileName, { color: colors.text }]} numberOfLines={1}>
+            {file.name}
+          </Text>
+          <Text style={[styles.fileDetail, { color: colors.secondaryText }]}>
+            {showSize
+              ? `${formatFileSize(file.size)} • ${formatDate(file.modifiedTime)}`
+              : `최근 사용 날짜: ${formatDate(file.modifiedTime)}`}
+          </Text>
+        </View>
+        {onMorePress && (
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              onMorePress(file);
+            }}
+            style={styles.moreButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <FontAwesome6 name="ellipsis-vertical" size={20} color={colors.secondaryText} />
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.file.id === nextProps.file.id &&
+      prevProps.file.name === nextProps.file.name &&
+      prevProps.file.modifiedTime === nextProps.file.modifiedTime &&
+      prevProps.file.size === nextProps.file.size &&
+      prevProps.showSize === nextProps.showSize
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   fileItem: {
