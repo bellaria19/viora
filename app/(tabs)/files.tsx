@@ -14,6 +14,7 @@ import { FileInfo } from '@/types/files';
 import { SortOption } from '@/types/sort';
 import { deleteFile, getDirectoryContents, getFileType, renameFile } from '@/utils/fileManager';
 import { sortFiles } from '@/utils/sorting';
+import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
@@ -63,6 +64,12 @@ export default function FilesScreen() {
   useEffect(() => {
     loadFiles();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadFiles();
+    }, []),
+  );
 
   useEffect(() => {
     filterAndSortFiles();
@@ -158,7 +165,7 @@ export default function FilesScreen() {
   };
 
   const renderHeader = () => (
-    <View style={[styles.sectionCard, styles.searchRow]}>
+    <View style={styles.header}>
       <View style={{ flex: 1 }}>
         <SearchBar value={searchQuery} onChangeText={setSearchQuery} placeholder="파일 검색..." />
       </View>
@@ -176,40 +183,41 @@ export default function FilesScreen() {
           onSelect={setSortOption}
         />
 
-        <View style={styles.listCard}>
-          <FlatList
-            data={filteredFiles}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            renderItem={({ item }) => (
-              <FileItem
-                file={item}
-                onPress={handleFilePress}
-                showSize
-                onMorePress={handleMorePress}
+        {renderHeader()}
+
+        <FlatList
+          data={filteredFiles}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          renderItem={({ item }) => (
+            <FileItem
+              file={item}
+              onPress={handleFilePress}
+              showSize
+              onMorePress={handleMorePress}
+            />
+          )}
+          ListEmptyComponent={() =>
+            searchQuery ? (
+              <EmptyFileList
+                iconName="magnifying-glass-minus"
+                message="검색 결과가 없습니다."
+                buttonLabel="파일 추가하기"
+                onPress={handleFilePick}
               />
-            )}
-            ListEmptyComponent={() =>
-              searchQuery ? (
-                <EmptyFileList
-                  iconName="magnifying-glass-minus"
-                  message="검색 결과가 없습니다."
-                  buttonLabel="파일 추가하기"
-                  onPress={handleFilePick}
-                />
-              ) : (
-                <EmptyFileList
-                  iconName="folder-open"
-                  message="파일을 추가해주세요."
-                  buttonLabel="파일 추가하기"
-                  onPress={handleFilePick}
-                />
-              )
-            }
-            ListHeaderComponent={renderHeader}
-            stickyHeaderIndices={[0]}
-            contentContainerStyle={{ paddingBottom: 120 }}
-          />
-        </View>
+            ) : (
+              <EmptyFileList
+                iconName="folder-open"
+                message="파일을 추가해주세요."
+                buttonLabel="파일 추가하기"
+                onPress={handleFilePick}
+              />
+            )
+          }
+          // ListHeaderComponent={renderHeader}
+          // stickyHeaderIndices={[0]}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 120 }}
+        />
 
         {files.length > 0 && (
           <FloatingButton
@@ -256,44 +264,15 @@ export default function FilesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  sectionCard: {
-    backgroundColor: colors.card,
-    borderRadius: 14,
-    marginHorizontal: 14,
-    marginTop: 18,
+  header: {
+    marginTop: 12,
     marginBottom: 12,
     padding: 12,
-    shadowColor: colors.tabIconDefault,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 6,
     elevation: 2,
-  },
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
-  },
-  listCard: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    marginTop: 0,
-    paddingTop: 2,
-    overflow: 'hidden',
-  },
-  searchContainer: {
+
     flexDirection: 'row',
-    padding: 16,
+
     alignItems: 'center',
-  },
-  sortContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
   },
 });
