@@ -1,5 +1,6 @@
 import { colors } from '@/constants/colors';
 import { FontAwesome6 } from '@expo/vector-icons';
+import { memo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 interface ButtonOption {
@@ -16,7 +17,7 @@ interface ButtonGroupProps {
   fullWidth?: boolean;
 }
 
-export default function ButtonGroup({
+export default memo(function ButtonGroup({
   value,
   options,
   onChange,
@@ -76,7 +77,7 @@ export default function ButtonGroup({
       })}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

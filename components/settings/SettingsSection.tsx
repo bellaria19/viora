@@ -1,4 +1,5 @@
 import { colors } from '@/constants/colors';
+import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface SettingsSectionProps {
@@ -6,14 +7,14 @@ interface SettingsSectionProps {
   children: React.ReactNode;
 }
 
-export default function SettingsSection({ title, children }: SettingsSectionProps) {
+export default memo(function SettingsSection({ title, children }: SettingsSectionProps) {
   return (
     <View style={styles.settingsSection}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {children}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   settingsSection: {

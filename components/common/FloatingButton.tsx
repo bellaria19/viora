@@ -1,5 +1,6 @@
 import { colors } from '@/constants/colors';
 import { FontAwesome6 } from '@expo/vector-icons';
+import { memo } from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
 interface FloatingButtonProps {
@@ -8,7 +9,7 @@ interface FloatingButtonProps {
   backgroundColor: string;
 }
 
-export default function FloatingButton({
+export default memo(function FloatingButton({
   onPress,
   iconName,
   backgroundColor,
@@ -25,7 +26,7 @@ export default function FloatingButton({
       <FontAwesome6 name={iconName} size={28} color="#fff" />
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   floatingButton: {

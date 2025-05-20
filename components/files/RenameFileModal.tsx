@@ -1,23 +1,16 @@
 import { colors } from '@/constants/colors';
+import { RenameFileModalProps } from '@/types/modal';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-
-interface RenameFileModalProps {
-  visible: boolean;
-  value: string;
-  onChange: (text: string) => void;
-  onCancel: () => void;
-  onConfirm: () => void;
-}
 
 export default function RenameFileModal({
   visible,
   value,
   onChange,
-  onCancel,
+  onClose,
   onConfirm,
 }: RenameFileModalProps) {
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.container}>
         <View style={styles.modal}>
           <Text style={styles.title}>파일 이름 수정</Text>
@@ -32,7 +25,7 @@ export default function RenameFileModal({
             maxLength={100}
           />
           <View style={styles.buttonRow}>
-            <TouchableOpacity onPress={onCancel} style={styles.button}>
+            <TouchableOpacity onPress={onClose} style={styles.button}>
               <Text style={styles.cancelText}>취소</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onConfirm} style={styles.button}>

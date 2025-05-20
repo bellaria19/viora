@@ -1,5 +1,4 @@
-import EmptyState from '@/components/files/EmptyFileList';
-import FileItem from '@/components/files/FileItem';
+import { EmptyState, FileItem } from '@/components/files';
 import { colors } from '@/constants/colors';
 import { useFilePicker } from '@/hooks/useFilePicker';
 import { FileInfo } from '@/types/files';

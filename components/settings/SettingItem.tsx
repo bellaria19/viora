@@ -1,4 +1,5 @@
 import { colors } from '@/constants/colors';
+import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface SettingItemProps {
@@ -7,7 +8,7 @@ interface SettingItemProps {
   description?: string;
 }
 
-export default function SettingItem({ label, children, description }: SettingItemProps) {
+export default memo(function SettingItem({ label, children, description }: SettingItemProps) {
   return (
     <View style={styles.settingItem}>
       <View style={styles.settingItemHeader}>
@@ -17,7 +18,7 @@ export default function SettingItem({ label, children, description }: SettingIte
       {description && <Text style={styles.settingItemDescription}>{description}</Text>}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   settingItem: {

@@ -1,8 +1,9 @@
 import { colors } from '@/constants/colors';
 import { FileOptionsModalProps } from '@/types/modal';
+import { memo } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function FileOptionsModal({
+export default memo(function FileOptionsModal({
   visible,
   fileName,
   onRename,
@@ -30,7 +31,7 @@ export default function FileOptionsModal({
       </TouchableOpacity>
     </Modal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

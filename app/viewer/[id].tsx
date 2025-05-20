@@ -1,10 +1,12 @@
-import EPUBViewer from '@/components/viewers/EPUBViewer';
-import ImageViewer from '@/components/viewers/ImageViewer';
-import PDFViewer from '@/components/viewers/PDFViewer';
-import TextViewer from '@/components/viewers/TextViewer';
-import ViewerError from '@/components/viewers/ViewerError';
-import ViewerUnsupported from '@/components/viewers/ViewerUnsupported';
-import ZipImageViewer from '@/components/viewers/ZipImageViewer';
+import {
+  EPUBViewer,
+  ImageViewer,
+  PDFViewer,
+  TextViewer,
+  ViewerError,
+  ViewerUnsupported,
+  ZipImageViewer,
+} from '@/components/viewers';
 import { FileInfo } from '@/types/files';
 import { addRecentFile } from '@/utils/fileManager';
 import { useLocalSearchParams } from 'expo-router';

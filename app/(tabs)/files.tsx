@@ -1,13 +1,15 @@
-import FloatingButton from '@/components/common/FloatingButton';
-import DeleteFileModal from '@/components/files/DeleteFileModal';
-import DuplicateFileModal from '@/components/files/DuplicateModal';
-import EmptyState from '@/components/files/EmptyFileList';
-import FileActionSheet from '@/components/files/FileActionSheet';
-import FileItem from '@/components/files/FileItem';
-import RenameFileModal from '@/components/files/RenameFileModal';
-import SearchBar from '@/components/files/SearchBar';
-import SortButton from '@/components/files/SortButton';
-import SortMenu from '@/components/files/SortMenu';
+import { FloatingButton } from '@/components/common';
+import {
+  DeleteFileModal,
+  DuplicateModal,
+  EmptyState,
+  FileItem,
+  FileOptionsModal,
+  RenameFileModal,
+  SearchBar,
+  SortButton,
+  SortMenu,
+} from '@/components/files';
 import { colors } from '@/constants/colors';
 import { useFilePicker } from '@/hooks/useFilePicker';
 import { FileInfo } from '@/types/files';
@@ -33,7 +35,7 @@ export default function FilesScreen() {
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renameInput, setRenameInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<FileInfo | null>(null);
-  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showOptionModal, setShowOptionModal] = useState(false);
 
   const {
     showDuplicateModal,
@@ -107,7 +109,7 @@ export default function FilesScreen() {
     }
   };
 
-  const handleDeleteCancel = () => {
+  const handleDeleteClose = () => {
     setFileToDelete(null);
     setShowDeleteModal(false);
   };
@@ -134,32 +136,32 @@ export default function FilesScreen() {
     }
   };
 
-  const handleRenameCancel = () => {
+  const handleRenameClose = () => {
     setShowRenameModal(false);
     setFileToRename(null);
   };
 
   const handleMorePress = useCallback((file: FileInfo) => {
     setSelectedFile(file);
-    setShowActionSheet(true);
+    setShowOptionModal(true);
   }, []);
 
-  const handleActionSheetClose = () => {
-    setShowActionSheet(false);
+  const handleOptionModalClose = () => {
+    setShowOptionModal(false);
     setSelectedFile(null);
   };
 
-  const handleActionSheetRename = () => {
+  const handleOptionModalRename = () => {
     if (!selectedFile) return;
-    setShowActionSheet(false);
+    setShowOptionModal(false);
     setFileToRename(selectedFile);
     setRenameInput(selectedFile.name);
     setShowRenameModal(true);
   };
 
-  const handleActionSheetDelete = () => {
+  const handleOptionModalDelete = () => {
     if (!selectedFile) return;
-    setShowActionSheet(false);
+    setShowOptionModal(false);
     setFileToDelete(selectedFile);
     setShowDeleteModal(true);
   };
@@ -227,35 +229,36 @@ export default function FilesScreen() {
           />
         )}
 
-        <DuplicateFileModal
+        <DuplicateModal
           visible={showDuplicateModal}
           currentFile={currentDuplicateFile}
           currentIndex={currentDuplicateIndex}
           totalCount={duplicateFiles.length}
           onSkip={handleDuplicateSkip}
           onOverwrite={handleDuplicateOverwrite}
+          onClose={() => ({})}
         />
 
-        <FileActionSheet
-          visible={showActionSheet}
+        <FileOptionsModal
+          visible={showOptionModal}
           fileName={selectedFile?.name}
-          onRename={handleActionSheetRename}
-          onDelete={handleActionSheetDelete}
-          onClose={handleActionSheetClose}
+          onRename={handleOptionModalRename}
+          onDelete={handleOptionModalDelete}
+          onClose={handleOptionModalClose}
         />
 
         <RenameFileModal
           visible={showRenameModal}
           value={renameInput}
           onChange={handleRenameInputChange}
-          onCancel={handleRenameCancel}
+          onClose={handleRenameClose}
           onConfirm={handleRenameConfirm}
         />
 
         <DeleteFileModal
           visible={showDeleteModal}
           fileName={fileToDelete?.name}
-          onCancel={handleDeleteCancel}
+          onClose={handleDeleteClose}
           onConfirm={handleDeleteConfirm}
         />
       </View>

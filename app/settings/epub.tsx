@@ -7,7 +7,7 @@ import { colors } from '@/constants/colors';
 import { COLOR_OPTIONS, FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
-import { ScrollView, StyleSheet, Switch } from 'react-native';
+import { ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function EpubSettingsScreen() {
@@ -22,8 +22,8 @@ export default function EpubSettingsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom']}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         <SettingsSection title="뷰어 설정">
           <SettingItem label="뷰어 모드">
             <ButtonGroup
@@ -137,13 +137,3 @@ export default function EpubSettingsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-});

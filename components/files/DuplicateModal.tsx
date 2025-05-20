@@ -1,15 +1,6 @@
 import { colors } from '@/constants/colors';
-import { DuplicateFile } from '@/types/files';
+import { DuplicateFileModalProps } from '@/types/modal';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-interface DuplicateFileModalProps {
-  visible: boolean;
-  currentFile: DuplicateFile | null;
-  currentIndex: number;
-  totalCount: number;
-  onSkip: () => void;
-  onOverwrite: () => void;
-}
 
 export default function DuplicateFileModal({
   visible,
@@ -18,9 +9,10 @@ export default function DuplicateFileModal({
   totalCount,
   onSkip,
   onOverwrite,
+  onClose,
 }: DuplicateFileModalProps) {
   return (
-    <Modal animationType="fade" transparent={true} visible={visible}>
+    <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>

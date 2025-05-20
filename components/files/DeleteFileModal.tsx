@@ -1,27 +1,22 @@
 import { colors } from '@/constants/colors';
+import { DeleteFileModalProps } from '@/types/modal';
+import { memo } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-interface DeleteFileModalProps {
-  visible: boolean;
-  fileName?: string;
-  onCancel: () => void;
-  onConfirm: () => void;
-}
-
-export default function DeleteFileModal({
+export default memo(function DeleteFileModal({
   visible,
   fileName,
-  onCancel,
+  onClose,
   onConfirm,
 }: DeleteFileModalProps) {
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.container}>
         <View style={styles.modal}>
           <Text style={styles.title}>파일 삭제</Text>
           <Text style={styles.message}>정말로 "{fileName}" 파일을 삭제하시겠습니까?</Text>
           <View style={styles.buttonRow}>
-            <TouchableOpacity onPress={onCancel} style={styles.button}>
+            <TouchableOpacity onPress={onClose} style={styles.button}>
               <Text style={styles.cancelText}>취소</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={onConfirm} style={styles.button}>
@@ -32,7 +27,7 @@ export default function DeleteFileModal({
       </View>
     </Modal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

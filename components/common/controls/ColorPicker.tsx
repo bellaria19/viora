@@ -1,5 +1,6 @@
 import { colors } from '@/constants/colors';
 import { FontAwesome6 } from '@expo/vector-icons';
+import { memo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 interface ColorPickerProps {
@@ -8,7 +9,7 @@ interface ColorPickerProps {
   onChange: (value: string) => void;
 }
 
-export default function ColorPicker({ value, options, onChange }: ColorPickerProps) {
+export default memo(function ColorPicker({ value, options, onChange }: ColorPickerProps) {
   return (
     <View style={styles.colorPicker}>
       {options.map((color) => (
@@ -35,7 +36,7 @@ export default function ColorPicker({ value, options, onChange }: ColorPickerPro
       ))}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   colorPicker: {

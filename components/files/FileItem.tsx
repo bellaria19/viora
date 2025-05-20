@@ -2,6 +2,7 @@ import { colors } from '@/constants/colors';
 import { FileInfo } from '@/types/files';
 import { formatDate, formatFileSize, getFileIcon } from '@/utils/formatters';
 import { FontAwesome6 } from '@expo/vector-icons';
+import { memo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface FileItemProps {
@@ -11,7 +12,12 @@ interface FileItemProps {
   onMorePress?: (file: FileInfo) => void;
 }
 
-export default function FileItem({ file, onPress, showSize = false, onMorePress }: FileItemProps) {
+export default memo(function FileItem({
+  file,
+  onPress,
+  showSize = false,
+  onMorePress,
+}: FileItemProps) {
   return (
     <TouchableOpacity
       style={[
@@ -55,7 +61,7 @@ export default function FileItem({ file, onPress, showSize = false, onMorePress 
       )}
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   fileItem: {

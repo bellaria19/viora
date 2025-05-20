@@ -1,4 +1,5 @@
 import { colors } from '@/constants/colors';
+import { memo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface StepperControlProps {
@@ -12,7 +13,7 @@ interface StepperControlProps {
   disabled?: boolean;
 }
 
-export default function StepperControl({
+export default memo(function StepperControl({
   value,
   min,
   max,
@@ -54,7 +55,7 @@ export default function StepperControl({
       </TouchableOpacity>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   stepperContainer: {

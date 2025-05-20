@@ -14,9 +14,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FeedbackScreen() {
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom']}>
       <StatusBar style="auto" />
-      <ScrollView style={styles.scrollView} keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
           <View style={styles.iconContainer}>
             <FontAwesome6 name="envelope" size={32} color={colors.primary} />
@@ -92,13 +92,6 @@ export default function FeedbackScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
   content: {
     padding: 20,
     paddingTop: 40,

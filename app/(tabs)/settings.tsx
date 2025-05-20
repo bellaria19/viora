@@ -1,4 +1,4 @@
-import AboutModal from '@/components/settings/AboutModal';
+import { AboutModal } from '@/components/settings';
 import { colors } from '@/constants/colors';
 import { resetAllFiles } from '@/utils/fileManager';
 import { FontAwesome6 } from '@expo/vector-icons';
