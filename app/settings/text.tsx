@@ -1,8 +1,8 @@
-import ButtonGroup from '@/components/settings/ButtonGroup';
-import ColorPicker from '@/components/settings/ColorPicker';
+import ButtonGroup from '@/components/common/controls/ButtonGroup';
+import ColorPicker from '@/components/common/controls/ColorPicker';
+import StepperControl from '@/components/common/controls/StepperControl';
 import SettingItem from '@/components/settings/SettingItem';
 import SettingsSection from '@/components/settings/SettingsSection';
-import StepperControl from '@/components/settings/StepperControl';
 import { colors } from '@/constants/colors';
 import { COLOR_OPTIONS, FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';

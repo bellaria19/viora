@@ -2,19 +2,14 @@ import { colors } from '@/constants/colors';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-interface EmptyFileListProps {
+interface EmptyStateProps {
   iconName: string;
   message: string;
   buttonLabel: string;
   onPress: () => void;
 }
 
-export default function EmptyFileList({
-  iconName,
-  message,
-  buttonLabel,
-  onPress,
-}: EmptyFileListProps) {
+export default function EmptyState({ iconName, message, buttonLabel, onPress }: EmptyStateProps) {
   return (
     <View style={styles.emptyContainer}>
       <FontAwesome6

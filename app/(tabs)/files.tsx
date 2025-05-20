@@ -1,7 +1,7 @@
 import FloatingButton from '@/components/common/FloatingButton';
 import DeleteFileModal from '@/components/files/DeleteFileModal';
 import DuplicateFileModal from '@/components/files/DuplicateModal';
-import EmptyFileList from '@/components/files/EmptyFileList';
+import EmptyState from '@/components/files/EmptyFileList';
 import FileActionSheet from '@/components/files/FileActionSheet';
 import FileItem from '@/components/files/FileItem';
 import RenameFileModal from '@/components/files/RenameFileModal';
@@ -198,14 +198,14 @@ export default function FilesScreen() {
           )}
           ListEmptyComponent={() =>
             searchQuery ? (
-              <EmptyFileList
+              <EmptyState
                 iconName="magnifying-glass-minus"
                 message="검색 결과가 없습니다."
                 buttonLabel="파일 추가하기"
                 onPress={handleFilePick}
               />
             ) : (
-              <EmptyFileList
+              <EmptyState
                 iconName="folder-open"
                 message="파일을 추가해주세요."
                 buttonLabel="파일 추가하기"

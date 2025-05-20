@@ -1,8 +1,5 @@
-import ButtonGroup from '@/components/settings/ButtonGroup';
-import ColorPicker from '@/components/settings/ColorPicker';
-import SettingItem from '@/components/settings/SettingItem';
-import SettingsSection from '@/components/settings/SettingsSection';
-import StepperControl from '@/components/settings/StepperControl';
+import { ButtonGroup, ColorPicker, StepperControl } from '@/components/common/controls';
+import { SettingItem, SettingsSection } from '@/components/settings';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
 import {

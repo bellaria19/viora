@@ -1,5 +1,5 @@
-import Overlay from '@/components/common/Overlay';
-import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { Overlay, SettingsBottomSheet } from '@/components/common';
+import { SettingsSection } from '@/components/common/SettingsBottomSheet';
 import { FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';

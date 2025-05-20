@@ -1,6 +1,4 @@
-import ImageViewer from '@/components/viewers/ImageViewer';
-import ViewerError from '@/components/viewers/ViewerError';
-import ViewerLoading from '@/components/viewers/ViewerLoading';
+import { ImageViewer, ViewerError, ViewerLoading } from '@/components/viewers';
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert } from 'react-native';

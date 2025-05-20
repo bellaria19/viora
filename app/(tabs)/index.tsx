@@ -1,4 +1,4 @@
-import EmptyFileList from '@/components/files/EmptyFileList';
+import EmptyState from '@/components/files/EmptyFileList';
 import FileItem from '@/components/files/FileItem';
 import { colors } from '@/constants/colors';
 import { useFilePicker } from '@/hooks/useFilePicker';
@@ -53,7 +53,7 @@ export default function RecentScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           renderItem={({ item }) => <FileItem file={item} onPress={handleFilePress} />}
           ListEmptyComponent={() => (
-            <EmptyFileList
+            <EmptyState
               iconName="clock-rotate-left"
               message="최근에 본 파일이 없습니다."
               buttonLabel="파일 추가하기"

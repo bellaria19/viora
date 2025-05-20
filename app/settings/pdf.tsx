@@ -1,5 +1,5 @@
-import ButtonGroup from '@/components/settings/ButtonGroup';
-import ColorPicker from '@/components/settings/ColorPicker';
+import ButtonGroup from '@/components/common/controls/ButtonGroup';
+import ColorPicker from '@/components/common/controls/ColorPicker';
 import SettingItem from '@/components/settings/SettingItem';
 import SettingsSection from '@/components/settings/SettingsSection';
 import { colors } from '@/constants/colors';

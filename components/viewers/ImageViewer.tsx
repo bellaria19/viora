@@ -1,5 +1,6 @@
-import Overlay from '@/components/common/Overlay';
-import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { Overlay, SettingsBottomSheet } from '@/components/common';
+import { SettingsSection } from '@/components/common/SettingsBottomSheet';
+
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';

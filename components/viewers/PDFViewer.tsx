@@ -1,5 +1,5 @@
-import Overlay from '@/components/common/Overlay';
-import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { Overlay, SettingsBottomSheet } from '@/components/common';
+import { SettingsSection } from '@/components/common/SettingsBottomSheet';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

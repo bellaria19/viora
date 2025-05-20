@@ -1,6 +1,6 @@
-import Overlay from '@/components/common/Overlay';
-import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
-import ViewerError from '@/components/viewers/ViewerError';
+import { Overlay, SettingsBottomSheet } from '@/components/common';
+import { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { ViewerError } from '@/components/viewers';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { Reader, ReaderProvider, Themes, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';

@@ -1,6 +1,5 @@
 import { colors } from '@/constants/colors';
 import { FontAwesome6 } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 interface ButtonOption {
@@ -49,7 +48,6 @@ export default function ButtonGroup({
             onPress={() => {
               if (option.value !== value) {
                 onChange(option.value);
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
               }
             }}
             activeOpacity={0.7}
