@@ -1,7 +1,7 @@
 import { colors } from '@/constants/colors';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-type StepperControlProps = {
+interface StepperControlProps {
   value: number;
   min: number;
   max: number;
@@ -10,7 +10,7 @@ type StepperControlProps = {
   onChange: (value: number) => void;
   formatValue?: (value: number) => string;
   disabled?: boolean;
-};
+}
 
 export default function StepperControl({
   value,
