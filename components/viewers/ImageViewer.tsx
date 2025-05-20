@@ -244,6 +244,28 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
     [imageViewerOptions],
   );
 
+  const [errorStates, setErrorStates] = useState<boolean[]>([]);
+
+  useEffect(() => {
+    setErrorStates(Array(images.length).fill(false));
+  }, [images.length]);
+
+  const handleError = (pageIndex: number) => {
+    setErrorStates((prev) => {
+      const next = [...prev];
+      next[pageIndex] = true;
+      return next;
+    });
+  };
+
+  const handleLoadStart = (pageIndex: number) => {
+    setErrorStates((prev) => {
+      const next = [...prev];
+      next[pageIndex] = false;
+      return next;
+    });
+  };
+
   // 옵션 변경 핸들러
   const handleOptionChange = useCallback(
     (key: string, value: any) => {
@@ -270,33 +292,34 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const renderImagePage = useCallback(
     (imageUri: string, pageIndex: number) => {
       return (
-        // <GestureDetector gesture={composed} key={`page-${pageIndex}`}>
         <View style={styles.imagePageContainer} key={`page-${pageIndex}`}>
           <Animated.View style={imageAnimatedStyle}>
-            <ExpoImage
-              source={{ uri: imageUri }}
-              style={styles.image}
-              contentFit={imageViewerOptions.contentFit}
-              onLoadStart={() => {
-                setIsLoading(true);
-                setHasError(false);
-              }}
-              onLoadEnd={() => setIsLoading(false)}
-              onError={() => setHasError(true)}
-              cachePolicy={imageViewerOptions.enableCache ? 'memory-disk' : 'none'}
-              priority={imageViewerOptions.enablePreload ? 'high' : 'normal'}
-            />
-            {hasError && renderFallback()}
+            {!errorStates[pageIndex] && (
+              <ExpoImage
+                source={{ uri: imageUri }}
+                style={styles.image}
+                contentFit={imageViewerOptions.contentFit}
+                onLoadStart={() => {
+                  setIsLoading(true);
+                  handleLoadStart(pageIndex);
+                  // setHasError(false);
+                }}
+                onLoadEnd={() => setIsLoading(false)}
+                onError={() => handleError(pageIndex)}
+                cachePolicy={imageViewerOptions.enableCache ? 'memory-disk' : 'none'}
+                priority={imageViewerOptions.enablePreload ? 'high' : 'normal'}
+              />
+            )}
+            {errorStates[pageIndex] && renderFallback()}
           </Animated.View>
         </View>
-        // </GestureDetector>
       );
     },
     [composed, imageAnimatedStyle, imageViewerOptions, renderFallback],
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: imageViewerOptions.backgroundColor }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={{ flex: 1, backgroundColor: imageViewerOptions.backgroundColor }}>
           <GestureDetector gesture={composed}>
@@ -312,7 +335,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
             </PagerView>
           </GestureDetector>
 
-          {/* 오버레이 UI (헤더, 푸터, 페이지 컨트롤) */}
           <Overlay
             visible={overlayVisible}
             onBack={() => navigation.goBack()}
@@ -325,7 +347,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
         </View>
       </TouchableWithoutFeedback>
 
-      {/* 설정 바텀시트 */}
       <SettingsBottomSheet
         title="이미지 설정"
         isVisible={settingsVisible}
@@ -352,7 +373,7 @@ const styles = StyleSheet.create({
     height: SCREEN_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'black',
   },
   fallbackTextWrapper: {
     paddingHorizontal: 16,

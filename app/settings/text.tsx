@@ -7,7 +7,7 @@ import { colors } from '@/constants/colors';
 import { COLOR_OPTIONS, FONTS, THEMES } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TextSettingsScreen() {
@@ -19,7 +19,6 @@ export default function TextSettingsScreen() {
       if (key === 'theme') {
         const themeObj = THEMES.find((t) => t.value === value);
         updateTextViewerOptions({
-          theme: value,
           backgroundColor: themeObj?.bgColor,
           textColor: themeObj?.textColor,
         });
@@ -31,8 +30,8 @@ export default function TextSettingsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom']}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         <SettingsSection title="글꼴 설정">
           <SettingItem label="글꼴">
             <ButtonGroup
@@ -66,13 +65,13 @@ export default function TextSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="텍스트 표시">
-          <SettingItem label="테마">
+          {/* <SettingItem label="테마">
             <ButtonGroup
               value={textViewerOptions.theme}
               options={THEMES.map((t) => ({ value: t.value, label: t.label }))}
               onChange={(value) => handleOptionChange('theme', value)}
             />
-          </SettingItem>
+          </SettingItem> */}
 
           <SettingItem label="글자 색상">
             <ColorPicker
@@ -118,13 +117,3 @@ export default function TextSettingsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-});

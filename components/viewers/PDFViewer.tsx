@@ -3,7 +3,7 @@ import SettingsBottomSheet, { SettingsSection } from '@/components/common/Settin
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { TouchableWithoutFeedback, View } from 'react-native';
 import Pdf from 'react-native-pdf';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -121,13 +121,13 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: pdfViewerOptions.backgroundColor }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
-        <View style={styles.container}>
+        <View style={{ flex: 1 }}>
           <Pdf
             ref={pdfRef}
             source={{ uri }}
-            style={[styles.pdf, { backgroundColor: pdfViewerOptions.backgroundColor }]}
+            style={{ flex: 1, backgroundColor: pdfViewerOptions.backgroundColor }}
             enablePaging={pdfEnablePaging}
             horizontal={pdfHorizontal}
             onPageChanged={(page, numberOfPages) => {
@@ -160,13 +160,3 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  pdf: {
-    flex: 1,
-    width: Dimensions.get('window').width,
-  },
-});

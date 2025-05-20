@@ -1,3 +1,4 @@
+import Overlay from '@/components/common/Overlay';
 import SettingsBottomSheet, { SettingsSection } from '@/components/common/SettingsBottomSheet';
 import ViewerError from '@/components/viewers/ViewerError';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
@@ -5,16 +6,8 @@ import { Reader, ReaderProvider, Themes, useReader } from '@epubjs-react-native/
 import { useFileSystem } from '@epubjs-react-native/file-system';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Overlay from '../common/Overlay';
 
 type Location = {
   start?: { displayed?: { page?: number }; cfi?: string };
@@ -202,17 +195,10 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
     <SafeAreaView style={{ flex: 1 }}>
       <ReaderProvider>
         <Pressable
-          style={[styles.container, { backgroundColor: getBackgroundColor() }]}
+          style={{ flex: 1, backgroundColor: getBackgroundColor() }}
           onPress={() => setOverlayVisible(true)}
         >
-          {isLoading && (
-            <View style={[styles.loadingContainer, { backgroundColor: getBackgroundColor() }]}>
-              <ActivityIndicator size="large" color={getTextColor()} />
-              <Text style={[styles.loadingText, { color: getTextColor() }]}>
-                EPUB 파일을 불러오는 중...
-              </Text>
-            </View>
-          )}
+          {/* {isLoading && <ViewerLoading message="EPUB 파일을 불러오는 중..." />} */}
 
           <Reader
             src={uri}

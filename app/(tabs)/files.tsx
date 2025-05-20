@@ -270,9 +270,7 @@ const styles = StyleSheet.create({
     padding: 12,
     elevation: 2,
     gap: 8,
-
     flexDirection: 'row',
-
     alignItems: 'center',
   },
 });

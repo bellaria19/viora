@@ -3,7 +3,6 @@ import ImageViewer from '@/components/viewers/ImageViewer';
 import PDFViewer from '@/components/viewers/PDFViewer';
 import TextViewer from '@/components/viewers/TextViewer';
 import ViewerError from '@/components/viewers/ViewerError';
-import ViewerLoading from '@/components/viewers/ViewerLoading';
 import ViewerUnsupported from '@/components/viewers/ViewerUnsupported';
 import ZipImageViewer from '@/components/viewers/ZipImageViewer';
 import { FileInfo } from '@/types/files';
@@ -18,12 +17,12 @@ export default function ViewerScreen() {
     uri: string;
     title: string;
   }>();
-  const [isLoading, setIsLoading] = useState(true);
+  // const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadContent = useCallback(async () => {
     try {
-      setIsLoading(true);
+      // setIsLoading(true);
       setError(null);
 
       await addRecentFile({
@@ -35,11 +34,11 @@ export default function ViewerScreen() {
         modifiedTime: Date.now(),
       });
 
-      setIsLoading(false);
+      // setIsLoading(false);
     } catch (err) {
       console.error('Error loading content:', err);
       setError('파일을 불러오는 중 오류가 발생했습니다.');
-      setIsLoading(false);
+      // setIsLoading(false);
     }
   }, [params.id, params.title, params.uri, params.type]);
 
@@ -48,9 +47,9 @@ export default function ViewerScreen() {
   }, [loadContent]);
 
   const renderContent = () => {
-    if (isLoading) {
-      return <ViewerLoading />;
-    }
+    // if (isLoading) {
+    //   return <ViewerLoading />;
+    // }
 
     if (error) {
       return <ViewerError message={error} />;
