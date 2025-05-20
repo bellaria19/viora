@@ -12,7 +12,7 @@ import { colors } from '@/constants/colors';
 import { useFilePicker } from '@/hooks/useFilePicker';
 import { FileInfo } from '@/types/files';
 import { SortOption } from '@/types/sort';
-import { deleteFile, getDirectoryContents, renameFile } from '@/utils/fileManager';
+import { deleteFile, getDirectoryContents, getFileType, renameFile } from '@/utils/fileManager';
 import { sortFiles } from '@/utils/sorting';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -75,11 +75,13 @@ export default function FilesScreen() {
   };
 
   const handleFilePress = useCallback((file: FileInfo) => {
+    const extType = getFileType(file.name);
+    const type = file.type || extType;
     router.push({
       pathname: '/viewer/[id]',
       params: {
         id: file.id,
-        type: file.type,
+        type,
         uri: file.uri,
         title: file.name,
       },

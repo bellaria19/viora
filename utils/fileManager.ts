@@ -76,17 +76,32 @@ export const copyFile = async (sourceUri: string, fileName: string): Promise<Fil
 export const getFileType = (fileName: string): FileInfo['type'] => {
   const extension = fileName.toLowerCase().split('.').pop();
   switch (extension) {
+    // 이미지 뷰어 지원 확장자
     case 'jpg':
     case 'jpeg':
     case 'png':
     case 'gif':
+    case 'webp':
       return 'image';
+    // PDF 뷰어
     case 'pdf':
       return 'pdf';
+    // EPUB 뷰어
     case 'epub':
       return 'epub';
+    // ZIP 뷰어
     case 'zip':
       return 'zip';
+    // 텍스트 뷰어 지원 확장자
+    case 'txt':
+    case 'md':
+    case 'json':
+    case 'csv':
+    case 'log':
+    case 'conf':
+    case 'ini':
+      return 'text';
+    // 기타 확장자(기본값: text)
     default:
       return 'text';
   }
