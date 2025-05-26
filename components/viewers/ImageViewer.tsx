@@ -1,7 +1,6 @@
 import { Overlay, SettingsBottomSheet } from '@/components/common';
-import { SettingsSection } from '@/components/common/SettingsBottomSheet';
-import { BACKGROUND_COLOR_OPTIONS, CONTENT_FIT_OPTIONS } from '@/constants/option';
 
+import { getImageSections } from '@/app/settings/sections/imageSections';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -187,59 +186,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
     };
   });
 
-  // 설정 섹션 메모이제이션
-  const sections = useMemo<SettingsSection[]>(
-    () => [
-      {
-        title: '표시 설정',
-        data: [
-          {
-            key: 'contentFit',
-            type: 'button-group',
-            value: imageViewerOptions.contentFit,
-            label: '이미지 표시 방식',
-            options: CONTENT_FIT_OPTIONS,
-          },
-          {
-            key: 'backgroundColor',
-            type: 'color-group',
-            value: imageViewerOptions.backgroundColor,
-            label: '배경 색상',
-            colorOptions: BACKGROUND_COLOR_OPTIONS,
-          },
-        ],
-      },
-      {
-        title: '기능 설정',
-        data: [
-          {
-            key: 'enableDoubleTapZoom',
-            type: 'switch',
-            value: imageViewerOptions.enableDoubleTapZoom,
-            label: '더블 탭 확대/축소',
-          },
-        ],
-      },
-      {
-        title: '성능 설정',
-        data: [
-          {
-            key: 'enablePreload',
-            type: 'switch',
-            value: imageViewerOptions.enablePreload,
-            label: '이미지 미리 로드',
-          },
-          {
-            key: 'enableCache',
-            type: 'switch',
-            value: imageViewerOptions.enableCache,
-            label: '이미지 캐싱',
-          },
-        ],
-      },
-    ],
-    [imageViewerOptions],
-  );
+  const sections = useMemo(() => getImageSections(imageViewerOptions), [imageViewerOptions]);
 
   const [errorStates, setErrorStates] = useState<boolean[]>([]);
 

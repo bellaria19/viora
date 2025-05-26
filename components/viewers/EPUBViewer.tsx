@@ -1,13 +1,12 @@
+import { getEpubSections } from '@/app/settings/sections/epubSections';
 import { Overlay, SettingsBottomSheet } from '@/components/common';
-import { SettingsSection } from '@/components/common/SettingsBottomSheet';
 import ViewerError from '@/components/viewers/ViewerError';
 import ViewerLoading from '@/components/viewers/ViewerLoading';
-import { BACKGROUND_COLOR_OPTIONS, FONTS, TEXT_COLOR_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { Reader, ReaderProvider, Themes, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
 import { useNavigation } from '@react-navigation/native';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -34,114 +33,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
   // EPUB 뷰어 설정
   const { epubViewerOptions, updateEPUBViewerOptions } = useViewerSettings();
 
-  // 설정 섹션 데이터 (epub.tsx와 동일하게 통일)
-  const sections: SettingsSection[] = [
-    {
-      title: '뷰어 설정',
-      data: [
-        {
-          key: 'viewMode',
-          type: 'button-group',
-          value: epubViewerOptions.viewMode,
-          label: '뷰어 모드',
-          options: [
-            { value: 'page', label: '페이지', icon: 'file' },
-            { value: 'scroll', label: '스크롤', icon: 'scroll' },
-          ],
-        },
-        {
-          key: 'enableRTL',
-          type: 'switch',
-          value: epubViewerOptions.enableRTL,
-          label: 'RTL 방향 (오른쪽→왼쪽)',
-        },
-      ],
-    },
-    {
-      title: '글꼴 설정',
-      data: [
-        {
-          key: 'fontFamily',
-          type: 'button-group',
-          value: epubViewerOptions.fontFamily,
-          label: '글꼴',
-          options: FONTS.map((f) => ({ value: f.value, label: f.label })),
-        },
-        {
-          key: 'fontSize',
-          type: 'stepper',
-          value: epubViewerOptions.fontSize,
-          label: '글자 크기',
-          min: 12,
-          max: 32,
-          step: 2,
-          unit: 'px',
-        },
-        {
-          key: 'lineHeight',
-          type: 'stepper',
-          value: epubViewerOptions.lineHeight,
-          label: '줄 간격',
-          min: 1.0,
-          max: 2.5,
-          step: 0.1,
-        },
-      ],
-    },
-    {
-      title: '표시 설정',
-      data: [
-        {
-          key: 'textColor',
-          type: 'color-group',
-          value: epubViewerOptions.textColor,
-          label: '글자 색상',
-          colorOptions: TEXT_COLOR_OPTIONS,
-        },
-        {
-          key: 'backgroundColor',
-          type: 'color-group',
-          value: epubViewerOptions.backgroundColor,
-          label: '배경 색상',
-          colorOptions: BACKGROUND_COLOR_OPTIONS,
-        },
-        {
-          key: 'fontWeight',
-          type: 'stepper',
-          value: parseInt((epubViewerOptions.fontWeight || '400').toString(), 10) / 100,
-          label: '글자 두께(1~9)',
-          min: 1,
-          max: 9,
-          step: 1,
-        },
-      ],
-    },
-    {
-      title: '여백 설정',
-      data: [
-        {
-          key: 'marginHorizontal',
-          type: 'stepper',
-          value: epubViewerOptions.marginHorizontal,
-          label: '가로 여백',
-          min: 0,
-          max: 40,
-          step: 2,
-          unit: 'px',
-        },
-        {
-          key: 'marginVertical',
-          type: 'stepper',
-          value: epubViewerOptions.marginVertical,
-          label: '세로 여백',
-          min: 0,
-          max: 40,
-          step: 2,
-          unit: 'px',
-        },
-      ],
-    },
-  ];
+  const sections = useMemo(() => getEpubSections(epubViewerOptions), [epubViewerOptions]);
 
   // 설정 변경 핸들러
   const handleOptionChange = (key: string, value: any) => {

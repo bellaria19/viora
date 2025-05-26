@@ -1,6 +1,5 @@
+import { getPdfSections } from '@/app/settings/sections/pdfSections';
 import { Overlay, SettingsBottomSheet } from '@/components/common';
-import { SettingsSection } from '@/components/common/SettingsBottomSheet';
-import { BACKGROUND_COLOR_OPTIONS, VIEW_MODE_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -65,63 +64,7 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
   const pdfEnablePaging = pdfHorizontal;
 
   // 설정 섹션
-  const sections: SettingsSection[] = useMemo(
-    () => [
-      {
-        title: '뷰어 설정',
-        data: [
-          {
-            key: 'viewMode',
-            type: 'button-group',
-            value: pdfViewerOptions.viewMode,
-            label: '뷰어 모드',
-            options: VIEW_MODE_OPTIONS,
-          },
-          {
-            key: 'enableRTL',
-            type: 'switch',
-            value: pdfViewerOptions.enableRTL,
-            label: 'RTL 방향 (오른쪽→왼쪽)',
-          },
-        ],
-      },
-      {
-        title: '표시 설정',
-        data: [
-          {
-            key: 'backgroundColor',
-            type: 'color-group',
-            value: pdfViewerOptions.backgroundColor,
-            label: '배경 색상',
-            colorOptions: BACKGROUND_COLOR_OPTIONS,
-          },
-        ],
-      },
-      {
-        title: '기능 설정',
-        data: [
-          {
-            key: 'enableDoubleTapZoom',
-            type: 'switch',
-            value: pdfViewerOptions.enableDoubleTapZoom,
-            label: '더블 탭 확대/축소',
-          },
-        ],
-      },
-      {
-        title: '성능 설정',
-        data: [
-          {
-            key: 'enableCache',
-            type: 'switch',
-            value: pdfViewerOptions.enableCache,
-            label: '캐시 사용',
-          },
-        ],
-      },
-    ],
-    [pdfViewerOptions],
-  );
+  const sections = useMemo(() => getPdfSections(pdfViewerOptions), [pdfViewerOptions]);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>

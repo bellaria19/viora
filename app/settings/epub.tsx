@@ -1,19 +1,11 @@
-import ButtonGroup from '@/components/common/controls/ButtonGroup';
-import ColorPicker from '@/components/common/controls/CustomColorPicker';
-import StepperControl from '@/components/common/controls/StepperControl';
-import SettingItem from '@/components/settings/SettingItem';
-import SettingsSection from '@/components/settings/SettingsSection';
+import SettingRenderer from '@/components/settings/SettingRenderer';
 import { colors } from '@/constants/colors';
-import {
-  BACKGROUND_COLOR_OPTIONS,
-  FONTS,
-  TEXT_COLOR_OPTIONS,
-  VIEW_MODE_OPTIONS,
-} from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
-import { useCallback } from 'react';
-import { ScrollView, Switch } from 'react-native';
+import { SettingSectionData } from '@/types/settings';
+import { useCallback, useMemo } from 'react';
+import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getEpubSections } from './sections/epubSections';
 
 export default function EpubSettingsScreen() {
   const { epubViewerOptions, updateEPUBViewerOptions } = useViewerSettings();
@@ -26,99 +18,16 @@ export default function EpubSettingsScreen() {
     [updateEPUBViewerOptions],
   );
 
+  // SettingRenderer에 전달할 섹션 데이터
+  const sections: SettingSectionData[] = useMemo(
+    () => getEpubSections(epubViewerOptions),
+    [epubViewerOptions],
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom']}>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        <SettingsSection title="뷰어 설정">
-          <SettingItem label="뷰어 모드">
-            <ButtonGroup
-              value={epubViewerOptions.viewMode}
-              options={VIEW_MODE_OPTIONS}
-              onChange={(value: string) => handleOptionChange('viewMode', value)}
-            />
-          </SettingItem>
-
-          <SettingItem label="RTL 방향 (오른쪽→왼쪽)">
-            <Switch
-              value={epubViewerOptions.enableRTL}
-              onValueChange={(value) => handleOptionChange('enableRTL', value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
-            />
-          </SettingItem>
-        </SettingsSection>
-
-        <SettingsSection title="글꼴 설정">
-          <SettingItem label="글꼴">
-            <ButtonGroup
-              value={epubViewerOptions.fontFamily}
-              options={FONTS.map((f) => ({ value: f.value, label: f.label }))}
-              onChange={(value: string) => handleOptionChange('fontFamily', value)}
-            />
-          </SettingItem>
-
-          <SettingItem label="글자 크기">
-            <StepperControl
-              value={epubViewerOptions.fontSize}
-              min={12}
-              max={32}
-              step={1}
-              unit="px"
-              onChange={(value: number) => handleOptionChange('fontSize', value)}
-            />
-          </SettingItem>
-
-          <SettingItem label="줄 간격">
-            <StepperControl
-              value={epubViewerOptions.lineHeight}
-              min={1.0}
-              max={2.5}
-              step={0.1}
-              formatValue={(value) => value.toFixed(1)}
-              onChange={(value: number) => handleOptionChange('lineHeight', value)}
-            />
-          </SettingItem>
-        </SettingsSection>
-
-        <SettingsSection title="표시 설정">
-          <SettingItem label="글자 색상">
-            <ColorPicker
-              value={epubViewerOptions.textColor}
-              options={TEXT_COLOR_OPTIONS}
-              onChange={(value: string) => handleOptionChange('textColor', value)}
-            />
-          </SettingItem>
-
-          <SettingItem label="배경 색상">
-            <ColorPicker
-              value={epubViewerOptions.backgroundColor}
-              options={BACKGROUND_COLOR_OPTIONS}
-              onChange={(value: string) => handleOptionChange('backgroundColor', value)}
-            />
-          </SettingItem>
-        </SettingsSection>
-
-        <SettingsSection title="여백 설정">
-          <SettingItem label="가로 여백">
-            <StepperControl
-              value={epubViewerOptions.marginHorizontal}
-              min={8}
-              max={40}
-              step={2}
-              unit="px"
-              onChange={(value: number) => handleOptionChange('marginHorizontal', value)}
-            />
-          </SettingItem>
-          <SettingItem label="세로 여백">
-            <StepperControl
-              value={epubViewerOptions.marginVertical}
-              min={8}
-              max={40}
-              step={2}
-              unit="px"
-              onChange={(value: number) => handleOptionChange('marginVertical', value)}
-            />
-          </SettingItem>
-        </SettingsSection>
+        <SettingRenderer sections={sections} onChange={handleOptionChange} />
       </ScrollView>
     </SafeAreaView>
   );

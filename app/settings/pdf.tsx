@@ -1,11 +1,11 @@
-import { ButtonGroup, CustomColorPicker as ColorPicker } from '@/components/common/controls';
-import { SettingItem, SettingsSection } from '@/components/settings';
+import SettingRenderer from '@/components/settings/SettingRenderer';
 import { colors } from '@/constants/colors';
-import { BACKGROUND_COLOR_OPTIONS, VIEW_MODE_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
-import { useCallback } from 'react';
-import { ScrollView, Switch } from 'react-native';
+import { SettingSectionData } from '@/types/settings';
+import { useCallback, useMemo } from 'react';
+import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getPdfSections } from './sections/pdfSections';
 
 export default function PdfSettingsScreen() {
   const { pdfViewerOptions, updatePDFViewerOptions } = useViewerSettings();
@@ -18,54 +18,16 @@ export default function PdfSettingsScreen() {
     [updatePDFViewerOptions],
   );
 
+  // SettingRenderer에 전달할 섹션 데이터
+  const sections: SettingSectionData[] = useMemo(
+    () => getPdfSections(pdfViewerOptions),
+    [pdfViewerOptions],
+  );
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['bottom']}>
       <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-        <SettingsSection title="뷰어 설정">
-          <SettingItem label="뷰어 모드">
-            <ButtonGroup
-              value={pdfViewerOptions.viewMode}
-              options={VIEW_MODE_OPTIONS}
-              onChange={(value) => handleOptionChange('viewMode', value)}
-            />
-          </SettingItem>
-
-          <SettingItem label="RTL 방향 (오른쪽→왼쪽)">
-            <Switch
-              value={pdfViewerOptions.enableRTL}
-              onValueChange={(value) => handleOptionChange('enableRTL', value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
-            />
-          </SettingItem>
-        </SettingsSection>
-
-        <SettingsSection title="표시 설정">
-          <SettingItem label="배경 색상">
-            <ColorPicker
-              value={pdfViewerOptions.backgroundColor}
-              options={BACKGROUND_COLOR_OPTIONS}
-              onChange={(value: string) => handleOptionChange('backgroundColor', value)}
-            />
-          </SettingItem>
-        </SettingsSection>
-
-        <SettingsSection title="성능 설정">
-          <SettingItem label="더블 탭 확대/축소" description="두 번 탭하여 확대 또는 축소">
-            <Switch
-              value={pdfViewerOptions.enableDoubleTapZoom}
-              onValueChange={(value) => handleOptionChange('enableDoubleTapZoom', value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
-            />
-          </SettingItem>
-
-          <SettingItem label="캐시 사용" description="메모리 사용량이 증가하지만 성능이 향상됩니다">
-            <Switch
-              value={pdfViewerOptions.enableCache}
-              onValueChange={(value) => handleOptionChange('enableCache', value)}
-              trackColor={{ false: '#ddd', true: '#007AFF' }}
-            />
-          </SettingItem>
-        </SettingsSection>
+        <SettingRenderer sections={sections} onChange={handleOptionChange} />
       </ScrollView>
     </SafeAreaView>
   );

@@ -1,7 +1,6 @@
+import { getTextSections } from '@/app/settings/sections/textSections';
 import { Overlay, SettingsBottomSheet } from '@/components/common';
-import { SettingsSection } from '@/components/common/SettingsBottomSheet';
 import ViewerLoading from '@/components/viewers/ViewerLoading';
-import { BACKGROUND_COLOR_OPTIONS, FONTS, TEXT_COLOR_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
@@ -627,110 +626,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
   }, [textViewerOptions, webViewReady]);
 
   // 설정 섹션
-  const sections: SettingsSection[] = useMemo(
-    () => [
-      {
-        title: '뷰어 설정',
-        data: [
-          {
-            key: 'viewMode',
-            type: 'button-group',
-            value: viewMode,
-            label: '뷰어 모드',
-            options: [
-              { value: 'scroll', label: '스크롤', icon: 'scroll' },
-              { value: 'page', label: '페이지', icon: 'file' },
-            ],
-          },
-        ],
-      },
-      {
-        title: '글꼴 설정',
-        data: [
-          {
-            key: 'fontFamily',
-            type: 'button-group',
-            value: textViewerOptions.fontFamily,
-            label: '글꼴',
-            options: FONTS.map((f) => ({ value: f.value, label: f.label })),
-          },
-          {
-            key: 'fontSize',
-            type: 'stepper',
-            value: textViewerOptions.fontSize,
-            label: '글자 크기',
-            min: 16,
-            max: 34,
-            step: 2,
-            unit: 'px',
-          },
-          {
-            key: 'lineHeight',
-            type: 'stepper',
-            value: textViewerOptions.lineHeight,
-            label: '줄 간격',
-            min: 1.0,
-            max: 2.5,
-            step: 0.1,
-          },
-        ],
-      },
-      {
-        title: '표시 설정',
-        data: [
-          {
-            key: 'textColor',
-            type: 'color-group',
-            value: textViewerOptions.textColor,
-            label: '글자 색상',
-            colorOptions: TEXT_COLOR_OPTIONS,
-          },
-          {
-            key: 'backgroundColor',
-            type: 'color-group',
-            value: textViewerOptions.backgroundColor,
-            label: '배경 색상',
-            colorOptions: BACKGROUND_COLOR_OPTIONS,
-          },
-          {
-            key: 'fontWeight',
-            type: 'stepper',
-            value: parseInt((textViewerOptions.fontWeight || '400').toString(), 10) / 100,
-            label: '글자 두께(1~9)',
-            min: 1,
-            max: 9,
-            step: 1,
-          },
-        ],
-      },
-      {
-        title: '여백 설정',
-        data: [
-          {
-            key: 'marginHorizontal',
-            type: 'stepper',
-            value: textViewerOptions.marginHorizontal,
-            label: '가로 여백',
-            min: 0,
-            max: 40,
-            step: 2,
-            unit: 'px',
-          },
-          {
-            key: 'marginVertical',
-            type: 'stepper',
-            value: textViewerOptions.marginVertical,
-            label: '세로 여백',
-            min: 0,
-            max: 40,
-            step: 2,
-            unit: 'px',
-          },
-        ],
-      },
-    ],
-    [textViewerOptions, viewMode],
-  );
+  const sections = useMemo(() => getTextSections(textViewerOptions), [textViewerOptions]);
 
   // 옵션 변경 핸들러
   const handleOptionChange = useCallback(
