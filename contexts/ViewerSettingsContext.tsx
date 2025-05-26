@@ -35,9 +35,8 @@ const defaultTextViewerOptions: TextViewerOptions = {
   marginHorizontal: 16,
   marginVertical: 16,
   lastPage: 1,
-  fontWeight: 'normal',
   viewMode: 'scroll',
-  theme: 'light',
+  fontWeight: 400,
 };
 
 const defaultPDFViewerOptions: PDFViewerOptions = {
@@ -55,7 +54,6 @@ const defaultImageViewerOptions: ImageViewerOptions = {
   enableCache: true,
   contentFit: 'contain',
   backgroundColor: '#000',
-  showPageIndicator: true,
 };
 
 const defaultEPUBViewerOptions: EPUBViewerOptions = {
@@ -64,10 +62,9 @@ const defaultEPUBViewerOptions: EPUBViewerOptions = {
   fontSize: 16,
   lineHeight: 1.5,
   fontFamily: 'System',
-  theme: 'light',
+  fontWeight: 500,
   textColor: '#333',
   backgroundColor: '#fff',
-  linkColor: '#0066cc',
   marginHorizontal: 16,
   marginVertical: 16,
 };

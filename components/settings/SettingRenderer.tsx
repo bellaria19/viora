@@ -1,7 +1,8 @@
 import { ButtonGroup, ColorPicker, StepperControl } from '@/components/common/controls';
+import SettingItem from '@/components/settings/SettingItem';
+import SettingsSection from '@/components/settings/SettingsSection';
 import { SettingSectionData } from '@/types/settings';
 import { Switch } from 'react-native';
-import { SettingItem, SettingsSection } from './';
 
 interface SettingRendererProps {
   sections: SettingSectionData[];

@@ -26,11 +26,14 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
   useEffect(() => {
+    console.log('colorScheme', colorScheme);
     initializeFileSystem();
   }, []);
 

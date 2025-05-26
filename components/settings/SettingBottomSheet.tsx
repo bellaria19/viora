@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 
-interface SettingsBottomSheetProps {
+interface SettingBottomSheetProps {
   title: string;
   isVisible: boolean;
   onClose: () => void;
@@ -21,13 +21,13 @@ interface SettingsBottomSheetProps {
   onOptionChange: (key: string, value: any) => void;
 }
 
-export default function SettingsBottomSheet({
+export default function SettingBottomSheet({
   title,
   isVisible,
   onClose,
   sections,
   onOptionChange,
-}: SettingsBottomSheetProps) {
+}: SettingBottomSheetProps) {
   // 애니메이션 값
   const translateY = useRef(new Animated.Value(500)).current;
 

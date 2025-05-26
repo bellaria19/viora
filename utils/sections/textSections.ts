@@ -72,7 +72,8 @@ export function getTextSections(options: any): SettingSectionData[] {
         {
           key: 'fontWeight',
           type: 'stepper',
-          value: parseInt((options.fontWeight || '400').toString(), 10) / 100,
+          // value: parseInt((options.fontWeight || '400').toString(), 10) / 100,
+          value: Number((options.fontWeight || '400').toString().charAt(0)),
           label: '글자 두께',
           min: 1,
           max: 9,
