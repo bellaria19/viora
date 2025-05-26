@@ -1,10 +1,5 @@
-// 뷰어 옵션 타입 정의
-
-// 뷰어 공통 옵션 (베이스 타입)
-export interface BaseViewerOptions {}
-
 // 이미지 뷰어 옵션
-export interface ImageViewerOptions extends BaseViewerOptions {
+export interface ImageViewerOptions {
   /**
    * 더블탭 확대/축소 기능 사용 여부
    */
@@ -38,7 +33,7 @@ export interface ImageViewerOptions extends BaseViewerOptions {
 }
 
 // PDF 뷰어 옵션
-export interface PDFViewerOptions extends BaseViewerOptions {
+export interface PDFViewerOptions {
   /**
    * 뷰어 모드 (페이지별 보기/스크롤 보기)
    * 'page': 한 페이지씩 넘김, 'scroll': 전체 스크롤
@@ -72,7 +67,7 @@ export interface PDFViewerOptions extends BaseViewerOptions {
 }
 
 // 텍스트 뷰어 옵션
-export interface TextViewerOptions extends BaseViewerOptions {
+export interface TextViewerOptions {
   /**
    * 뷰어 모드 설정
    * 'page': 한 페이지씩 넘김, 'scroll': 전체 스크롤
@@ -127,7 +122,7 @@ export interface TextViewerOptions extends BaseViewerOptions {
 }
 
 // EPUB 뷰어 옵션
-export interface EPUBViewerOptions extends BaseViewerOptions {
+export interface EPUBViewerOptions {
   /**
    * 뷰어 모드 설정
    * 'page': 한 페이지씩 넘김, 'scroll': 전체 스크롤
@@ -178,6 +173,11 @@ export interface EPUBViewerOptions extends BaseViewerOptions {
    * 세로 여백(px)
    */
   marginVertical: number;
+
+  /**
+   * 최근 본 페이지 (자동 저장/복원용, UI 노출 X)
+   */
+  lastPage?: number;
 }
 
 // 설정 컴포넌트 props 인터페이스

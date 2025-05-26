@@ -84,6 +84,8 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             onLoadComplete={handleLoadComplete}
             enableRTL={pdfViewerOptions.enableRTL}
             enableDoubleTapZoom={pdfViewerOptions.enableDoubleTapZoom}
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
           />
           <Overlay
             visible={overlayVisible}

@@ -27,25 +27,25 @@ interface ViewerSettingsContextType {
 
 // 기본값
 const defaultTextViewerOptions: TextViewerOptions = {
+  viewMode: 'scroll',
   fontSize: 16,
-  lineHeight: 1.5,
+  fontWeight: 300,
   fontFamily: 'System',
   textColor: '#333',
+  lineHeight: 1.5,
   backgroundColor: '#fff',
   marginHorizontal: 16,
   marginVertical: 16,
   lastPage: 1,
-  viewMode: 'scroll',
-  fontWeight: 400,
 };
 
 const defaultPDFViewerOptions: PDFViewerOptions = {
   viewMode: 'page',
+  enableDoubleTapZoom: true,
   enableRTL: false,
   enableCache: true,
-  enableDoubleTapZoom: true,
-  lastPage: 1,
   backgroundColor: '#000',
+  lastPage: 1,
 };
 
 const defaultImageViewerOptions: ImageViewerOptions = {
@@ -54,19 +54,21 @@ const defaultImageViewerOptions: ImageViewerOptions = {
   enableCache: true,
   contentFit: 'contain',
   backgroundColor: '#000',
+  lastPage: 1,
 };
 
 const defaultEPUBViewerOptions: EPUBViewerOptions = {
   viewMode: 'page',
   enableRTL: false,
   fontSize: 16,
-  lineHeight: 1.5,
-  fontFamily: 'System',
   fontWeight: 500,
+  fontFamily: 'System',
   textColor: '#333',
+  lineHeight: 1.5,
   backgroundColor: '#fff',
   marginHorizontal: 16,
   marginVertical: 16,
+  lastPage: 1,
 };
 
 // 컨텍스트 생성
