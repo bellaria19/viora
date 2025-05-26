@@ -1,5 +1,27 @@
 import ViewerSettingsProvider from '@/contexts/ViewerSettingsContext';
 import { initializeFileSystem } from '@/utils/fileManager';
+import {
+  Inter_100Thin,
+  Inter_200ExtraLight,
+  Inter_300Light,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from '@expo-google-fonts/inter';
+import {
+  NotoSansKR_100Thin,
+  NotoSansKR_200ExtraLight,
+  NotoSansKR_300Light,
+  NotoSansKR_400Regular,
+  NotoSansKR_500Medium,
+  NotoSansKR_600SemiBold,
+  NotoSansKR_700Bold,
+  NotoSansKR_800ExtraBold,
+  NotoSansKR_900Black,
+} from '@expo-google-fonts/noto-sans-kr';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -13,7 +35,25 @@ export default function RootLayout() {
   }, []);
 
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Pretendard: require('@/assets/fonts/PretendardVariable.ttf'),
+    Inter_100Thin,
+    Inter_200ExtraLight,
+    Inter_300Light,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
+    NotoSansKR_100Thin,
+    NotoSansKR_200ExtraLight,
+    NotoSansKR_300Light,
+    NotoSansKR_400Regular,
+    NotoSansKR_500Medium,
+    NotoSansKR_600SemiBold,
+    NotoSansKR_700Bold,
+    NotoSansKR_800ExtraBold,
+    NotoSansKR_900Black,
   });
 
   if (!loaded) {

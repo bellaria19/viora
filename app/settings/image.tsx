@@ -1,7 +1,7 @@
-import { ButtonGroup, ColorPicker } from '@/components/common/controls';
+import { ButtonGroup, CustomColorPicker } from '@/components/common/controls';
 import { SettingItem, SettingsSection } from '@/components/settings';
 import { colors } from '@/constants/colors';
-import { COLOR_OPTIONS } from '@/constants/option';
+import { BACKGROUND_COLOR_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
 import { ScrollView, Switch } from 'react-native';
@@ -36,9 +36,9 @@ export default function ImageSettingsScreen() {
           </SettingItem>
 
           <SettingItem label="배경 색상">
-            <ColorPicker
+            <CustomColorPicker
               value={imageViewerOptions.backgroundColor}
-              options={COLOR_OPTIONS}
+              options={BACKGROUND_COLOR_OPTIONS}
               onChange={(value) => handleOptionChange('backgroundColor', value)}
             />
           </SettingItem>

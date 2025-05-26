@@ -72,6 +72,16 @@ export interface PDFViewerOptions extends BaseViewerOptions {
 // 텍스트 뷰어 옵션
 export interface TextViewerOptions extends BaseViewerOptions {
   /**
+   * 뷰어 모드 설정
+   * 'page': 한 페이지씩 넘김, 'scroll': 전체 스크롤
+   */
+  viewMode: 'scroll' | 'page';
+  /**
+   * 테마 설정
+   * 'light': 라이트, 'dark': 다크, 'sepia': 세피아
+   */
+  theme: 'light' | 'dark' | 'sepia';
+  /**
    * 폰트 크기(px)
    */
   fontSize: number;
@@ -106,6 +116,12 @@ export interface TextViewerOptions extends BaseViewerOptions {
    * 최근 본 페이지 (자동 저장/복원용, UI 노출 X)
    */
   lastPage?: number;
+
+  /**
+   * 글자 두께(font-weight)
+   * 'normal', 'bold', '100'~'900' 등
+   */
+  fontWeight?: string;
 }
 
 // EPUB 뷰어 옵션
@@ -124,6 +140,10 @@ export interface EPUBViewerOptions extends BaseViewerOptions {
    * 폰트 크기(px)
    */
   fontSize: number;
+  /**
+   * 폰트 두께(font-weight)
+   */
+  fontWeight: string;
   /**
    * 폰트 패밀리
    */

@@ -1,5 +1,6 @@
 import { Overlay, SettingsBottomSheet } from '@/components/common';
 import { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { BACKGROUND_COLOR_OPTIONS, VIEW_MODE_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -74,10 +75,7 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             type: 'button-group',
             value: pdfViewerOptions.viewMode,
             label: '뷰어 모드',
-            options: [
-              { value: 'page', label: '페이지', icon: 'file' },
-              { value: 'scroll', label: '스크롤', icon: 'scroll' },
-            ],
+            options: VIEW_MODE_OPTIONS,
           },
           {
             key: 'enableRTL',
@@ -95,12 +93,12 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             type: 'color-group',
             value: pdfViewerOptions.backgroundColor,
             label: '배경 색상',
-            colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+            colorOptions: BACKGROUND_COLOR_OPTIONS,
           },
         ],
       },
       {
-        title: '성능 설정',
+        title: '기능 설정',
         data: [
           {
             key: 'enableDoubleTapZoom',
@@ -108,6 +106,11 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             value: pdfViewerOptions.enableDoubleTapZoom,
             label: '더블 탭 확대/축소',
           },
+        ],
+      },
+      {
+        title: '성능 설정',
+        data: [
           {
             key: 'enableCache',
             type: 'switch',

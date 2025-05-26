@@ -1,5 +1,6 @@
 import { Overlay, SettingsBottomSheet } from '@/components/common';
 import { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import { BACKGROUND_COLOR_OPTIONS, CONTENT_FIT_OPTIONS } from '@/constants/option';
 
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { FontAwesome6 } from '@expo/vector-icons';
@@ -197,19 +198,14 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
             type: 'button-group',
             value: imageViewerOptions.contentFit,
             label: '이미지 표시 방식',
-            options: [
-              { value: 'contain', label: 'Contain' },
-              { value: 'cover', label: 'Cover' },
-              { value: 'fill', label: 'Fill' },
-              { value: 'none', label: 'None' },
-            ],
+            options: CONTENT_FIT_OPTIONS,
           },
           {
             key: 'backgroundColor',
             type: 'color-group',
             value: imageViewerOptions.backgroundColor,
             label: '배경 색상',
-            colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+            colorOptions: BACKGROUND_COLOR_OPTIONS,
           },
         ],
       },

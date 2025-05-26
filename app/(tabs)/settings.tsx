@@ -1,3 +1,4 @@
+import { Divider } from '@/components/common';
 import { AboutModal } from '@/components/settings';
 import { colors } from '@/constants/colors';
 import { resetAllFiles } from '@/utils/fileManager';
@@ -7,7 +8,7 @@ import { useCallback, useState } from 'react';
 import { Alert, SectionList, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 // 설정 항목 타입 정의
-type SettingItemType = {
+interface SettingItemType {
   id: string;
   title: string;
   icon: string;
@@ -18,13 +19,13 @@ type SettingItemType = {
   onPress?: () => void;
   switchValue?: boolean;
   onToggle?: (value: boolean) => void;
-};
+}
 
 // 설정 섹션 타입 정의
-type SettingSectionType = {
+interface SettingSectionType {
   title: string;
   data: SettingItemType[];
-};
+}
 
 export default function SettingsScreen() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -203,9 +204,9 @@ export default function SettingsScreen() {
         renderItem={renderSettingItem}
         renderSectionHeader={renderSectionHeader}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={() => <Divider />}
         stickySectionHeadersEnabled={false}
+        // SectionSeparatorComponent={() => <Divider />}
       />
       <AboutModal visible={aboutVisible} onClose={() => setAboutVisible(false)} />
     </View>
@@ -213,25 +214,6 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  listContent: {
-    paddingBottom: 30,
-  },
   sectionTitleContainer: {
     backgroundColor: colors.background,
     paddingHorizontal: 16,
@@ -239,8 +221,9 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
     color: colors.text,
   },
   settingItem: {

@@ -1,3 +1,4 @@
+import Divider from '@/components/common/Divider';
 import { colors } from '@/constants/colors';
 import { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -12,6 +13,7 @@ export default memo(function SettingsSection({ title, children }: SettingsSectio
     <View style={styles.settingsSection}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {children}
+      <Divider />
     </View>
   );
 });
@@ -19,17 +21,14 @@ export default memo(function SettingsSection({ title, children }: SettingsSectio
 const styles = StyleSheet.create({
   settingsSection: {
     padding: 16,
-    marginBottom: 12,
     backgroundColor: colors.card,
-    borderRadius: 12,
+    marginBottom: 12,
     marginHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
     color: colors.text,
   },
 });

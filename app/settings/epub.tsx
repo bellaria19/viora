@@ -1,10 +1,15 @@
 import ButtonGroup from '@/components/common/controls/ButtonGroup';
-import ColorPicker from '@/components/common/controls/ColorPicker';
+import ColorPicker from '@/components/common/controls/CustomColorPicker';
 import StepperControl from '@/components/common/controls/StepperControl';
 import SettingItem from '@/components/settings/SettingItem';
 import SettingsSection from '@/components/settings/SettingsSection';
 import { colors } from '@/constants/colors';
-import { COLOR_OPTIONS, FONTS, THEMES } from '@/constants/option';
+import {
+  BACKGROUND_COLOR_OPTIONS,
+  FONTS,
+  TEXT_COLOR_OPTIONS,
+  VIEW_MODE_OPTIONS,
+} from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
 import { ScrollView, Switch } from 'react-native';
@@ -28,10 +33,7 @@ export default function EpubSettingsScreen() {
           <SettingItem label="뷰어 모드">
             <ButtonGroup
               value={epubViewerOptions.viewMode}
-              options={[
-                { value: 'page', label: '페이지', icon: 'file' },
-                { value: 'scroll', label: '스크롤', icon: 'scroll' },
-              ]}
+              options={VIEW_MODE_OPTIONS}
               onChange={(value: string) => handleOptionChange('viewMode', value)}
             />
           </SettingItem>
@@ -78,35 +80,19 @@ export default function EpubSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="표시 설정">
-          <SettingItem label="테마">
-            <ButtonGroup
-              value={epubViewerOptions.theme}
-              options={THEMES.map((t) => ({ value: t.value, label: t.label }))}
-              onChange={(value: string) => handleOptionChange('theme', value)}
-            />
-          </SettingItem>
-
           <SettingItem label="글자 색상">
             <ColorPicker
               value={epubViewerOptions.textColor}
-              options={COLOR_OPTIONS}
-              onChange={(value) => handleOptionChange('textColor', value)}
+              options={TEXT_COLOR_OPTIONS}
+              onChange={(value: string) => handleOptionChange('textColor', value)}
             />
           </SettingItem>
 
           <SettingItem label="배경 색상">
             <ColorPicker
               value={epubViewerOptions.backgroundColor}
-              options={COLOR_OPTIONS}
-              onChange={(value) => handleOptionChange('backgroundColor', value)}
-            />
-          </SettingItem>
-
-          <SettingItem label="링크 색상">
-            <ColorPicker
-              value={epubViewerOptions.linkColor}
-              options={COLOR_OPTIONS}
-              onChange={(value) => handleOptionChange('linkColor', value)}
+              options={BACKGROUND_COLOR_OPTIONS}
+              onChange={(value: string) => handleOptionChange('backgroundColor', value)}
             />
           </SettingItem>
         </SettingsSection>

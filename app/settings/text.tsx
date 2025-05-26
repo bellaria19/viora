@@ -1,7 +1,7 @@
-import { ButtonGroup, ColorPicker, StepperControl } from '@/components/common/controls';
+import { ButtonGroup, CustomColorPicker, StepperControl } from '@/components/common/controls';
 import { SettingItem, SettingsSection } from '@/components/settings';
 import { colors } from '@/constants/colors';
-import { COLOR_OPTIONS, FONTS, THEMES } from '@/constants/option';
+import { BACKGROUND_COLOR_OPTIONS, FONTS, TEXT_COLOR_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
 import { ScrollView } from 'react-native';
@@ -13,15 +13,7 @@ export default function TextSettingsScreen() {
   // 설정 변경 핸들러
   const handleOptionChange = useCallback(
     (key: string, value: any) => {
-      if (key === 'theme') {
-        const themeObj = THEMES.find((t) => t.value === value);
-        updateTextViewerOptions({
-          backgroundColor: themeObj?.bgColor,
-          textColor: themeObj?.textColor,
-        });
-      } else {
-        updateTextViewerOptions({ [key]: value });
-      }
+      updateTextViewerOptions({ [key]: value });
     },
     [updateTextViewerOptions],
   );
@@ -62,27 +54,29 @@ export default function TextSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="텍스트 표시">
-          {/* <SettingItem label="테마">
-            <ButtonGroup
-              value={textViewerOptions.theme}
-              options={THEMES.map((t) => ({ value: t.value, label: t.label }))}
-              onChange={(value) => handleOptionChange('theme', value)}
-            />
-          </SettingItem> */}
-
           <SettingItem label="글자 색상">
-            <ColorPicker
+            <CustomColorPicker
               value={textViewerOptions.textColor}
-              options={COLOR_OPTIONS}
-              onChange={(value) => handleOptionChange('textColor', value)}
+              options={TEXT_COLOR_OPTIONS}
+              onChange={(value: string) => handleOptionChange('textColor', value)}
             />
           </SettingItem>
 
           <SettingItem label="배경 색상">
-            <ColorPicker
+            <CustomColorPicker
               value={textViewerOptions.backgroundColor}
-              options={COLOR_OPTIONS}
-              onChange={(value) => handleOptionChange('backgroundColor', value)}
+              options={BACKGROUND_COLOR_OPTIONS}
+              onChange={(value: string) => handleOptionChange('backgroundColor', value)}
+            />
+          </SettingItem>
+
+          <SettingItem label="글자 두께">
+            <StepperControl
+              value={parseInt((textViewerOptions.fontWeight || '400').toString(), 10) / 100}
+              min={1}
+              max={9}
+              step={1}
+              onChange={(value) => handleOptionChange('fontWeight', String(value * 100))}
             />
           </SettingItem>
         </SettingsSection>

@@ -39,12 +39,6 @@ export default function FilesScreen() {
   const [renameInput, setRenameInput] = useState('');
   const [showOptionModal, setShowOptionModal] = useState(false);
 
-  const [modalState, setModalState] = useState({
-    delete: { show: false, file: null as FileInfo | null },
-    rename: { show: false, file: null as FileInfo | null, input: '' },
-    option: { show: false, file: null as FileInfo | null },
-  });
-
   const {
     showDuplicateModal,
     currentDuplicateFile,

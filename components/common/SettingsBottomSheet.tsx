@@ -1,4 +1,4 @@
-import { ButtonGroup, ColorPicker, StepperControl } from '@/components/common/controls';
+import { ButtonGroup, CustomColorPicker, StepperControl } from '@/components/common/controls';
 import { SettingItem, SettingsSection } from '@/components/settings';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
@@ -87,10 +87,10 @@ export default function SettingsBottomSheet({
       case 'color-group':
         return (
           <SettingItem label={option.label ?? ''}>
-            <ColorPicker
+            <CustomColorPicker
               value={option.value}
               options={option.colorOptions ?? []}
-              onChange={(value) => onOptionChange(option.key, value)}
+              onChange={(value: string) => onOptionChange(option.key, value)}
             />
           </SettingItem>
         );
@@ -147,7 +147,7 @@ export default function SettingsBottomSheet({
               <FontAwesome6 name="xmark" size={24} color="#666" />
             </TouchableOpacity>
           </View>
-          <ScrollView>
+          <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
             {sections.map((section) => (
               <SettingsSection key={section.title} title={section.title}>
                 {section.data.map((option) => (

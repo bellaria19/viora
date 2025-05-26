@@ -17,10 +17,13 @@
     "@dr.pogodin/react-native-fs": "^2.33.1",
     "@epubjs-react-native/core": "^1.4.6",
     "@epubjs-react-native/file-system": "^1.1.4",
+    "@expo-google-fonts/inter": "^0.3.0",
+    "@expo-google-fonts/noto-sans-kr": "^0.3.0",
     "@expo/config-plugins": "^10.0.2",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/slider": "4.5.5",
+    "@react-native-picker/picker": "^2.11.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.0.14",
@@ -59,6 +62,7 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "^13.13.5",
     "react-native-zip-archive": "^7.0.1",
+    "reanimated-color-picker": "^4.0.1",
     "styled-components": "^6.1.17"
   },
   "devDependencies": {

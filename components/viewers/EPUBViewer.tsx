@@ -1,13 +1,15 @@
 import { Overlay, SettingsBottomSheet } from '@/components/common';
 import { SettingsSection } from '@/components/common/SettingsBottomSheet';
+import ViewerError from '@/components/viewers/ViewerError';
+import ViewerLoading from '@/components/viewers/ViewerLoading';
+import { BACKGROUND_COLOR_OPTIONS, FONTS, TEXT_COLOR_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { Reader, ReaderProvider, Themes, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
 import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
-import { Pressable, StyleSheet, useWindowDimensions } from 'react-native';
+import { Pressable, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ViewerError from './ViewerError';
 
 type Location = {
   start?: { displayed?: { page?: number }; cfi?: string };
@@ -31,32 +33,6 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
 
   // EPUB 뷰어 설정
   const { epubViewerOptions, updateEPUBViewerOptions } = useViewerSettings();
-
-  // 테마 및 색상 적용 함수
-  const getBackgroundColor = () => {
-    // 사용자 지정 배경색 우선, 없으면 테마별 기본값
-    if (epubViewerOptions.backgroundColor) return epubViewerOptions.backgroundColor;
-    switch (epubViewerOptions.theme) {
-      case 'dark':
-        return '#1a1a1a';
-      case 'sepia':
-        return '#f8f1e3';
-      default:
-        return '#ffffff';
-    }
-  };
-
-  const getTextColor = () => {
-    if (epubViewerOptions.textColor) return epubViewerOptions.textColor;
-    switch (epubViewerOptions.theme) {
-      case 'dark':
-        return '#eee';
-      case 'sepia':
-        return '#5b4636';
-      default:
-        return '#333';
-    }
-  };
 
   // 설정 섹션 데이터 (epub.tsx와 동일하게 통일)
   const sections: SettingsSection[] = [
@@ -89,12 +65,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
           type: 'button-group',
           value: epubViewerOptions.fontFamily,
           label: '글꼴',
-          options: [
-            { value: 'System', label: '시스템' },
-            { value: 'SpaceMono', label: '스페이스 모노' },
-            { value: 'Arial', label: '아리알' },
-            { value: 'Georgia', label: '조지아' },
-          ],
+          options: FONTS.map((f) => ({ value: f.value, label: f.label })),
         },
         {
           key: 'fontSize',
@@ -103,7 +74,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
           label: '글자 크기',
           min: 12,
           max: 32,
-          step: 1,
+          step: 2,
           unit: 'px',
         },
         {
@@ -121,36 +92,27 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
       title: '표시 설정',
       data: [
         {
-          key: 'theme',
-          type: 'button-group',
-          value: epubViewerOptions.theme,
-          label: '테마',
-          options: [
-            { value: 'light', label: '라이트' },
-            { value: 'dark', label: '다크' },
-            { value: 'sepia', label: '세피아' },
-          ],
-        },
-        {
           key: 'textColor',
           type: 'color-group',
           value: epubViewerOptions.textColor,
           label: '글자 색상',
-          colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+          colorOptions: TEXT_COLOR_OPTIONS,
         },
         {
           key: 'backgroundColor',
           type: 'color-group',
           value: epubViewerOptions.backgroundColor,
           label: '배경 색상',
-          colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+          colorOptions: BACKGROUND_COLOR_OPTIONS,
         },
         {
-          key: 'linkColor',
-          type: 'color-group',
-          value: epubViewerOptions.linkColor,
-          label: '링크 색상',
-          colorOptions: ['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent'],
+          key: 'fontWeight',
+          type: 'stepper',
+          value: parseInt((epubViewerOptions.fontWeight || '400').toString(), 10) / 100,
+          label: '글자 두께(1~9)',
+          min: 1,
+          max: 9,
+          step: 1,
         },
       ],
     },
@@ -162,7 +124,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
           type: 'stepper',
           value: epubViewerOptions.marginHorizontal,
           label: '가로 여백',
-          min: 8,
+          min: 0,
           max: 40,
           step: 2,
           unit: 'px',
@@ -172,7 +134,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
           type: 'stepper',
           value: epubViewerOptions.marginVertical,
           label: '세로 여백',
-          min: 8,
+          min: 0,
           max: 40,
           step: 2,
           unit: 'px',
@@ -195,10 +157,10 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
     <SafeAreaView style={{ flex: 1 }}>
       <ReaderProvider>
         <Pressable
-          style={{ flex: 1, backgroundColor: getBackgroundColor() }}
+          style={{ flex: 1, backgroundColor: epubViewerOptions.backgroundColor }}
           onPress={() => setOverlayVisible(true)}
         >
-          {/* {isLoading && <ViewerLoading message="EPUB 파일을 불러오는 중..." />} */}
+          {isLoading && <ViewerLoading message="EPUB 파일을 불러오는 중..." />}
 
           <Reader
             src={uri}
@@ -265,19 +227,3 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 100,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-  },
-});

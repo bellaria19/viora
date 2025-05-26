@@ -1,6 +1,7 @@
-import { ButtonGroup, ColorPicker } from '@/components/common/controls';
+import { ButtonGroup, CustomColorPicker as ColorPicker } from '@/components/common/controls';
 import { SettingItem, SettingsSection } from '@/components/settings';
 import { colors } from '@/constants/colors';
+import { BACKGROUND_COLOR_OPTIONS, VIEW_MODE_OPTIONS } from '@/constants/option';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { useCallback } from 'react';
 import { ScrollView, Switch } from 'react-native';
@@ -24,10 +25,7 @@ export default function PdfSettingsScreen() {
           <SettingItem label="뷰어 모드">
             <ButtonGroup
               value={pdfViewerOptions.viewMode}
-              options={[
-                { value: 'page', label: '페이지', icon: 'file' },
-                { value: 'scroll', label: '스크롤', icon: 'scroll' },
-              ]}
+              options={VIEW_MODE_OPTIONS}
               onChange={(value) => handleOptionChange('viewMode', value)}
             />
           </SettingItem>
@@ -45,8 +43,8 @@ export default function PdfSettingsScreen() {
           <SettingItem label="배경 색상">
             <ColorPicker
               value={pdfViewerOptions.backgroundColor}
-              options={['#000', '#fff', '#222', '#444', '#666', '#007AFF', 'transparent']}
-              onChange={(value) => handleOptionChange('backgroundColor', value)}
+              options={BACKGROUND_COLOR_OPTIONS}
+              onChange={(value: string) => handleOptionChange('backgroundColor', value)}
             />
           </SettingItem>
         </SettingsSection>

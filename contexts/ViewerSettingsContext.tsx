@@ -35,6 +35,9 @@ const defaultTextViewerOptions: TextViewerOptions = {
   marginHorizontal: 16,
   marginVertical: 16,
   lastPage: 1,
+  fontWeight: 'normal',
+  viewMode: 'scroll',
+  theme: 'light',
 };
 
 const defaultPDFViewerOptions: PDFViewerOptions = {
