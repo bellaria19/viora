@@ -27,21 +27,6 @@ export const THEMES = [
   { value: 'sepia', label: '세피아', bgColor: '#f8f1e3', textColor: '#5b4636' },
 ];
 
-// 화면 회전 모드 옵션
-// export const ORIENTATION_MODE_OPTIONS = [
-//   { value: 'portrait', label: '세로' },
-//   { value: 'landscape', label: '가로' },
-//   { value: 'auto', label: '자동' },
-// ];
-
-// 회전 각도 옵션
-export const ROTATION_OPTIONS = [
-  { value: 0, label: '0°' },
-  { value: 90, label: '90°' },
-  { value: 180, label: '180°' },
-  { value: 270, label: '270°' },
-];
-
 // 색상 옵션
 export const TEXT_COLOR_OPTIONS = ['#000000', '#ffffff', '#eeeeee', '#5b4636'];
 export const BACKGROUND_COLOR_OPTIONS = ['#000000', '#ffffff', '#1a1a1a', '#f8f1e3'];

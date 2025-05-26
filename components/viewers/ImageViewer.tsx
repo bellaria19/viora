@@ -4,17 +4,20 @@ import { getImageSections } from '@/utils/sections/imageSections';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import {
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import PagerView from 'react-native-pager-view';
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -33,7 +36,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const [isLoading, setIsLoading] = useState(true);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [rotationAngle, setRotationAngle] = useState(0);
 
   const navigation = useNavigation();
   const pagerRef = useRef<PagerView>(null);
@@ -46,9 +48,12 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const savedPanX = useSharedValue(0);
   const panY = useSharedValue(0);
   const savedPanY = useSharedValue(0);
-  const rotation = useSharedValue(0);
 
   const [isPagerScrollEnabled, setPagerScrollEnabled] = useState(true);
+
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+
+  const insets = useSafeAreaInsets();
 
   // 페이지 변경 이벤트
   const handlePageChange = useCallback(
@@ -58,13 +63,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
     },
     [setIndex],
   );
-
-  // 이미지 회전 핸들러 (설정 조건 제거)
-  const handleRotate = useCallback(() => {
-    const newRotation = (rotationAngle + 90) % 360;
-    setRotationAngle(newRotation);
-    rotation.value = withSpring(newRotation);
-  }, [rotationAngle, rotation]);
 
   // 특정 페이지로 이동
   const goToPage = useCallback(
@@ -91,11 +89,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
       pagerRef.current.setPageWithoutAnimation(index);
     }
   }, [pagerRef, images.length, index]);
-
-  // 새로 추가:
-  useEffect(() => {
-    rotation.value = rotationAngle;
-  }, [rotation, rotationAngle]);
 
   // 제스처 설정 (기존 코드와 동일)
   const pinchGesture = Gesture.Pinch()
@@ -176,12 +169,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   // 이미지 스타일 (확대/축소, 이동, 회전 포함)
   const imageAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [
-        { translateX: panX.value },
-        { translateY: panY.value },
-        { scale: scale.value },
-        { rotate: `${rotation.value}deg` }, // 회전 추가
-      ],
+      transform: [{ translateX: panX.value }, { translateY: panY.value }, { scale: scale.value }],
     };
   });
 
@@ -240,7 +228,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
             {!errorStates[pageIndex] && (
               <ExpoImage
                 source={{ uri: imageUri }}
-                style={styles.image}
+                style={{ width: windowWidth, height: windowHeight }}
                 contentFit={imageViewerOptions.contentFit}
                 onLoadStart={() => {
                   setIsLoading(true);
@@ -257,11 +245,28 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
         </View>
       );
     },
-    [imageAnimatedStyle, imageViewerOptions, renderFallback, errorStates],
+    [
+      imageAnimatedStyle,
+      windowWidth,
+      windowHeight,
+      imageViewerOptions,
+      renderFallback,
+      errorStates,
+    ],
   );
 
+  // 화면 회전 제어: 뷰어 진입 시 가로/세로 허용, 벗어날 때 세로 고정
+  useEffect(() => {
+    // 진입 시: 모든 방향 허용
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+    return () => {
+      // 뷰어를 벗어날 때: 세로 고정
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    };
+  }, []);
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1, paddingTop: insets.bottom }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={{ flex: 1, backgroundColor: imageViewerOptions.backgroundColor }}>
           <GestureDetector gesture={composed}>
@@ -281,8 +286,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
             visible={overlayVisible}
             onBack={() => navigation.goBack()}
             onSettings={() => setSettingsVisible(true)}
-            onRotation={handleRotate}
-            showRotation={true} // 이미지 뷰어에서는 항상 회전 버튼 표시
             showSlider={images.length > 1}
             currentPage={index + 1}
             totalPages={images.length}
@@ -308,13 +311,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  image: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
-  },
   fallbackContainer: {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'black',

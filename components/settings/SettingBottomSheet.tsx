@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -30,6 +31,10 @@ export default function SettingBottomSheet({
 }: SettingBottomSheetProps) {
   // 애니메이션 값
   const translateY = useRef(new Animated.Value(500)).current;
+
+  // 화면 방향 감지
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
 
   // 바텀시트 열고 닫기 애니메이션
   useEffect(() => {
@@ -53,14 +58,35 @@ export default function SettingBottomSheet({
   return (
     <Modal visible={isVisible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.container}>
-        <Animated.View style={[styles.modalContainer, { transform: [{ translateY }] }]}>
-          <View style={styles.headerContainer}>
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            isLandscape && {
+              alignSelf: 'center',
+              width: Math.min(500, width - 64), // 가로모드에서 중앙, 최대 500px, 좌우 여백
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+            },
+            { transform: [{ translateY }] },
+          ]}
+        >
+          <View
+            style={[
+              styles.headerContainer,
+              isLandscape && { marginHorizontal: 24, marginTop: 24, marginBottom: 8 },
+            ]}
+          >
             <Text style={styles.headerTitle}>{title}</Text>
             <TouchableOpacity onPress={onClose} style={{ padding: 8 }}>
               <FontAwesome6 name="xmark" size={24} color="#666" />
             </TouchableOpacity>
           </View>
-          <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+          <ScrollView
+            contentContainerStyle={[
+              { paddingBottom: 60 },
+              isLandscape && { paddingHorizontal: 24 },
+            ]}
+          >
             <SettingRenderer sections={sections} onChange={onOptionChange} />
           </ScrollView>
         </Animated.View>

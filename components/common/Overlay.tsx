@@ -6,12 +6,10 @@ interface OverlayProps {
   visible: boolean;
   onBack?: () => void;
   onSettings?: () => void;
-  onRotation?: () => void;
   showSlider?: boolean;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
-  showRotation?: boolean;
 }
 
 const BAR_HEIGHT = 70; // topBar의 height와 동일하게 맞춰줍니다.
@@ -21,12 +19,10 @@ export default function Overlay({
   visible,
   onBack,
   onSettings,
-  onRotation,
   showSlider = false,
   currentPage = 1,
   totalPages = 1,
   onPageChange,
-  showRotation = false,
 }: OverlayProps) {
   if (!visible) return null;
 
@@ -36,16 +32,9 @@ export default function Overlay({
         <TouchableOpacity onPress={onBack} style={styles.iconButton}>
           <FontAwesome6 name="chevron-left" size={28} color="#fff" />
         </TouchableOpacity>
-        <View style={styles.topRightButtons}>
-          {showRotation && (
-            <TouchableOpacity onPress={onRotation} style={styles.iconButton}>
-              <FontAwesome6 name="rotate-right" size={26} color="#fff" />
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity onPress={onSettings} style={styles.iconButton}>
-            <FontAwesome6 name="gear" size={26} color="#fff" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={onSettings} style={styles.iconButton}>
+          <FontAwesome6 name="gear" size={26} color="#fff" />
+        </TouchableOpacity>
       </View>
       <View style={[styles.bottomBar, { height: showSlider ? BOTTOM_BAR_HEIGHT : BAR_HEIGHT }]}>
         {showSlider && (
