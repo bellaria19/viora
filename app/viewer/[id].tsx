@@ -3,14 +3,13 @@ import {
   ImageViewer,
   PDFViewer,
   TextViewer,
-  ViewerError,
   ViewerUnsupported,
   ZipImageViewer,
 } from '@/components/viewers';
 import { FileInfo } from '@/types/files';
 import { addRecentFile } from '@/utils/fileManager';
 import { useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 
 export default function ViewerScreen() {
   const params = useLocalSearchParams<{
@@ -19,14 +18,9 @@ export default function ViewerScreen() {
     uri: string;
     title: string;
   }>();
-  // const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const loadContent = useCallback(async () => {
     try {
-      // setIsLoading(true);
-      setError(null);
-
       await addRecentFile({
         id: params.id,
         name: params.title,
@@ -35,12 +29,8 @@ export default function ViewerScreen() {
         size: 0,
         modifiedTime: Date.now(),
       });
-
-      // setIsLoading(false);
     } catch (err) {
       console.error('Error loading content:', err);
-      setError('파일을 불러오는 중 오류가 발생했습니다.');
-      // setIsLoading(false);
     }
   }, [params.id, params.title, params.uri, params.type]);
 
@@ -49,14 +39,6 @@ export default function ViewerScreen() {
   }, [loadContent]);
 
   const renderContent = () => {
-    // if (isLoading) {
-    //   return <ViewerLoading />;
-    // }
-
-    if (error) {
-      return <ViewerError message={error} />;
-    }
-
     switch (params.type) {
       case 'text':
         return <TextViewer uri={params.uri} />;

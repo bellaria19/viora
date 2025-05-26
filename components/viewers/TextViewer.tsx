@@ -1,7 +1,7 @@
-import { getTextSections } from '@/app/settings/sections/textSections';
 import { Overlay, SettingsBottomSheet } from '@/components/common';
 import ViewerLoading from '@/components/viewers/ViewerLoading';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
+import { getTextSections } from '@/utils/sections/textSections';
 import { useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';

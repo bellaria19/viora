@@ -1,4 +1,4 @@
-import { ButtonGroup, CustomColorPicker, StepperControl } from '@/components/common/controls';
+import { ButtonGroup, ColorPicker, StepperControl } from '@/components/common/controls';
 import { SettingSectionData } from '@/types/settings';
 import { Switch } from 'react-native';
 import { SettingItem, SettingsSection } from './';
@@ -30,7 +30,7 @@ export default function SettingRenderer({ sections, onChange }: SettingRendererP
                 <Switch value={item.value} onValueChange={(v: boolean) => onChange(item.key, v)} />
               )}
               {item.type === 'color-group' && (
-                <CustomColorPicker
+                <ColorPicker
                   value={item.value}
                   options={item.options}
                   onChange={(v: string) => onChange(item.key, v)}

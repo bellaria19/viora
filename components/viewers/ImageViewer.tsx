@@ -1,7 +1,7 @@
 import { Overlay, SettingsBottomSheet } from '@/components/common';
 
-import { getImageSections } from '@/app/settings/sections/imageSections';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
+import { getImageSections } from '@/utils/sections/imageSections';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';

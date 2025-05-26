@@ -5,7 +5,7 @@ import { SettingSectionData } from '@/types/settings';
 import { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getImageSections } from './sections/imageSections';
+import { getImageSections } from '../../utils/sections/imageSections';
 
 export default function ImageSettingsScreen() {
   const { imageViewerOptions, updateImageViewerOptions } = useViewerSettings();
@@ -18,7 +18,6 @@ export default function ImageSettingsScreen() {
     [updateImageViewerOptions],
   );
 
-  // SettingRenderer에 전달할 섹션 데이터
   const sections: SettingSectionData[] = useMemo(
     () => getImageSections(imageViewerOptions),
     [imageViewerOptions],

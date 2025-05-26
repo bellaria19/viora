@@ -5,7 +5,7 @@ import { SettingSectionData } from '@/types/settings';
 import { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getEpubSections } from './sections/epubSections';
+import { getEpubSections } from '../../utils/sections/epubSections';
 
 export default function EpubSettingsScreen() {
   const { epubViewerOptions, updateEPUBViewerOptions } = useViewerSettings();
@@ -18,7 +18,6 @@ export default function EpubSettingsScreen() {
     [updateEPUBViewerOptions],
   );
 
-  // SettingRenderer에 전달할 섹션 데이터
   const sections: SettingSectionData[] = useMemo(
     () => getEpubSections(epubViewerOptions),
     [epubViewerOptions],

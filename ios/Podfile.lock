@@ -2091,6 +2091,27 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNCPicker (2.11.0):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - RNFlashList (1.8.0):
     - DoubleConversion
     - glog
@@ -2382,6 +2403,7 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - "ReactNativeFs (from `../node_modules/@dr.pogodin/react-native-fs`)"
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
+  - "RNCPicker (from `../node_modules/@react-native-picker/picker`)"
   - "RNFlashList (from `../node_modules/@shopify/flash-list`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
@@ -2591,6 +2613,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@dr.pogodin/react-native-fs"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
+  RNCPicker:
+    :path: "../node_modules/@react-native-picker/picker"
   RNFlashList:
     :path: "../node_modules/@shopify/flash-list"
   RNGestureHandler:
@@ -2702,6 +2726,7 @@ SPEC CHECKSUMS:
   ReactCommon: 300d8d9c5cb1a6cd79a67cf5d8f91e4d477195f9
   ReactNativeFs: 8833ca61498c321fff2a5612c0002803019f657c
   RNCAsyncStorage: 66991bb6672ed988a8c56289a08bf4fc3a29d4b3
+  RNCPicker: ad6e8e4caab487a19ae035a999c396f7e24029a7
   RNFlashList: 0dbea8359f8d0fb99c416ca09b91203ff65e26cc
   RNGestureHandler: 9c8bf98209e658e1ceb13026f176e4ede1f24491
   RNReanimated: 2e5069649cbab2c946652d3b97589b2ae0526220

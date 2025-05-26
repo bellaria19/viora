@@ -1,6 +1,6 @@
-import { getPdfSections } from '@/app/settings/sections/pdfSections';
 import { Overlay, SettingsBottomSheet } from '@/components/common';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
+import { getPdfSections } from '@/utils/sections/pdfSections';
 import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TouchableWithoutFeedback, View } from 'react-native';

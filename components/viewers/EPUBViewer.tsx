@@ -1,8 +1,8 @@
-import { getEpubSections } from '@/app/settings/sections/epubSections';
 import { Overlay, SettingsBottomSheet } from '@/components/common';
 import ViewerError from '@/components/viewers/ViewerError';
 import ViewerLoading from '@/components/viewers/ViewerLoading';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
+import { getEpubSections } from '@/utils/sections/epubSections';
 import { Reader, ReaderProvider, Themes, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
 import { useNavigation } from '@react-navigation/native';

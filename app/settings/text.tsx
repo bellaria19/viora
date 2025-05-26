@@ -5,7 +5,7 @@ import { SettingSectionData } from '@/types/settings';
 import { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getTextSections } from './sections/textSections';
+import { getTextSections } from '../../utils/sections/textSections';
 
 export default function TextSettingsScreen() {
   const { textViewerOptions, updateTextViewerOptions } = useViewerSettings();
@@ -18,7 +18,6 @@ export default function TextSettingsScreen() {
     [updateTextViewerOptions],
   );
 
-  // SettingRenderer에 전달할 섹션 데이터
   const sections: SettingSectionData[] = useMemo(
     () => getTextSections(textViewerOptions),
     [textViewerOptions],

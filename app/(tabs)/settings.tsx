@@ -258,9 +258,4 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  separator: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginLeft: 68, // 아이콘 영역만큼 들여쓰기
-  },
 });

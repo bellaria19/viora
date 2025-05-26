@@ -5,7 +5,7 @@ import { SettingSectionData } from '@/types/settings';
 import { useCallback, useMemo } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getPdfSections } from './sections/pdfSections';
+import { getPdfSections } from '../../utils/sections/pdfSections';
 
 export default function PdfSettingsScreen() {
   const { pdfViewerOptions, updatePDFViewerOptions } = useViewerSettings();
@@ -18,7 +18,6 @@ export default function PdfSettingsScreen() {
     [updatePDFViewerOptions],
   );
 
-  // SettingRenderer에 전달할 섹션 데이터
   const sections: SettingSectionData[] = useMemo(
     () => getPdfSections(pdfViewerOptions),
     [pdfViewerOptions],
