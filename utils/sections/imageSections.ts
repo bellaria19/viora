@@ -1,8 +1,4 @@
-import {
-  BACKGROUND_COLOR_OPTIONS,
-  CONTENT_FIT_OPTIONS,
-  ROTATION_OPTIONS,
-} from '@/constants/option';
+import { BACKGROUND_COLOR_OPTIONS, CONTENT_FIT_OPTIONS } from '@/constants/option';
 import { SettingSectionData } from '@/types/settings';
 
 export function getImageSections(options: any): SettingSectionData[] {
@@ -23,13 +19,6 @@ export function getImageSections(options: any): SettingSectionData[] {
           value: options.backgroundColor,
           label: '배경 색상',
           options: BACKGROUND_COLOR_OPTIONS,
-        },
-        {
-          key: 'rotation',
-          type: 'button-group',
-          value: options.rotation ?? 0,
-          label: '회전 각도',
-          options: ROTATION_OPTIONS,
         },
       ],
     },
