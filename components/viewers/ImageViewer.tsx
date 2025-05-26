@@ -9,7 +9,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Dimensions, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import PagerView from 'react-native-pager-view';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -35,7 +40,11 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const navigation = useNavigation();
   const pagerRef = useRef<PagerView>(null);
   const { imageViewerOptions, updateImageViewerOptions } = useViewerSettings();
+  // 각 이미지별 회전 상태 관리
+  const [imageRotations, setImageRotations] = useState<number[]>(Array(images.length).fill(0));
 
+  // 애니메이션 값에 회전 추가
+  const rotation = useSharedValue(0);
   // 애니메이션 상태 값 (이미지 확대/축소 및 이동용)
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
@@ -46,6 +55,21 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const swipeTranslateX = useSharedValue(0);
   // pager 스크롤 가능 여부 (확대 시 스크롤 비활성화용)
   const [isPagerScrollEnabled, setPagerScrollEnabled] = useState(true);
+
+  const handleRotate = useCallback(() => {
+    if (!imageViewerOptions.rotation) return;
+
+    setImageRotations((prev) => {
+      const newRotations = [...prev];
+      const currentRotation = newRotations[index] || 0;
+      const newRotation = (currentRotation + 90) % 360;
+      newRotations[index] = newRotation;
+
+      rotation.value = withSpring(newRotation);
+
+      return newRotations;
+    });
+  }, [imageViewerOptions.rotation, index, rotation]);
 
   // 페이지 변경 이벤트
   const handlePageChange = useCallback(
@@ -182,7 +206,12 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   // 이미지 스타일 (확대/축소 및 이동)
   const imageAnimatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ translateX: panX.value }, { translateY: panY.value }, { scale: scale.value }],
+      transform: [
+        { translateX: panX.value },
+        { translateY: panY.value },
+        { scale: scale.value },
+        { rotate: `${rotation.value}deg` },
+      ],
     };
   });
 
@@ -192,6 +221,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
 
   useEffect(() => {
     setErrorStates(Array(images.length).fill(false));
+    setImageRotations(Array(images.length).fill(0)); // 회전 상태 초기화 추가
   }, [images.length]);
 
   const handleError = (pageIndex: number) => {
@@ -282,11 +312,13 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
           <Overlay
             visible={overlayVisible}
             onBack={() => navigation.goBack()}
+            onRotation={handleRotate}
             onSettings={() => setSettingsVisible(true)}
             showSlider={images.length > 1}
             currentPage={index + 1}
             totalPages={images.length}
             onPageChange={handleSliderPageChange}
+            showRotation={true}
           />
         </View>
       </TouchableWithoutFeedback>

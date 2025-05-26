@@ -27,6 +27,11 @@ export interface ImageViewerOptions {
   backgroundColor: string;
 
   /**
+   * 회전 각도 (0, 90, 180, 270)
+   */
+  rotation?: number;
+
+  /**
    * 최근 본 페이지 (자동 저장/복원용, UI 노출 X)
    */
   lastPage?: number;

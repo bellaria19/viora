@@ -54,6 +54,7 @@ const defaultImageViewerOptions: ImageViewerOptions = {
   enableCache: true,
   contentFit: 'contain',
   backgroundColor: '#000',
+  rotation: 0,
   lastPage: 1,
 };
 
