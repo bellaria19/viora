@@ -1,4 +1,5 @@
-import { Overlay, SettingsBottomSheet } from '@/components/common';
+import { Overlay } from '@/components/common';
+import SettingBottomSheet from '@/components/settings/SettingBottomSheet';
 import ViewerError from '@/components/viewers/ViewerError';
 import ViewerLoading from '@/components/viewers/ViewerLoading';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
@@ -6,6 +7,7 @@ import { getTextSections } from '@/utils/sections/textSections';
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
 interface TextViewerProps {
@@ -63,9 +65,8 @@ export default function TextViewer({ uri }: TextViewerProps) {
     [textViewerOptions],
   );
 
+  const { top: safeAreaTop, bottom: safeAreaBottom } = useSafeAreaInsets();
   // HTML 템플릿 생성
-  // components/viewers/TextViewer.tsx - 페이지 분할 개선된 부분
-
   const htmlContent = useMemo(() => {
     const escapedContent = content
       .replace(/&/g, '&amp;')
@@ -135,7 +136,6 @@ export default function TextViewer({ uri }: TextViewerProps) {
             height: 100vh;
             display: flex;
             flex-direction: column;
-            box-sizing: border-box;
         }
         
         .page-mode #content {
@@ -143,22 +143,12 @@ export default function TextViewer({ uri }: TextViewerProps) {
             overflow: hidden;
             display: flex;
             align-items: flex-start;
-            justify-content: flex-start;
-            padding-bottom: 60px; /* 페이지 번호 공간 증가 */
-            box-sizing: border-box;
+            padding-bottom: 40px; /* 페이지 번호 공간 */
         }
         
         .page-content {
             width: 100%;
             line-height: ${textViewerOptions.lineHeight};
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            hyphens: auto;
-            box-sizing: border-box;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
         }
         
         .page-number {
@@ -182,6 +172,16 @@ export default function TextViewer({ uri }: TextViewerProps) {
         .page-fade {
             opacity: 0.3;
         }
+
+        /* 측정용 숨겨진 엘리먼트 */
+        .hidden-measure {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            visibility: hidden;
+            z-index: -1;
+        }
     </style>
 </head>
 <body class="${isPageMode ? 'page-mode' : 'scroll-mode'}">
@@ -194,14 +194,20 @@ export default function TextViewer({ uri }: TextViewerProps) {
         ${isPageMode ? '<div class="page-number" id="pageNumber">1 / 1</div>' : ''}
     </div>
     
+    <!-- 실제 렌더링 측정용 숨겨진 컨테이너 -->
+    <div id="hiddenContainer" class="hidden-measure">
+        <div id="hiddenContent" style="padding: ${textViewerOptions.marginVertical}px ${textViewerOptions.marginHorizontal}px;">
+            ${escapedContent}
+        </div>
+    </div>
+    
     <script>
     let currentPage = 1;
     let totalPages = 1;
     let isPageMode = ${isPageMode};
     let pages = [];
     let originalContent = \`${escapedContent}\`;
-    let pageHeight = 0;
-    let lineHeight = 0;
+    let pageBreakPositions = [];
     
     // React Native로 메시지 전송
     function sendMessage(type, data = null, message = null) {
@@ -220,110 +226,69 @@ export default function TextViewer({ uri }: TextViewerProps) {
         sendMessage('log', null, message);
     }
     
-    // 페이지 높이와 줄 높이 정확히 계산
-    function calculateDimensions() {
-        const container = document.getElementById('container');
-        const content = document.getElementById('content');
-        
-        if (!container || !content) {
-            log('컨테이너 또는 콘텐츠 요소를 찾을 수 없음');
-            return;
-        }
-        
-        const containerStyle = getComputedStyle(container);
-        const paddingTop = parseInt(containerStyle.paddingTop) || 0;
-        const paddingBottom = parseInt(containerStyle.paddingBottom) || 0;
-        
-        // 실제 사용 가능한 콘텐츠 높이 계산 (페이지 번호 공간과 여백 제외)
-        const pageNumberHeight = 60; // 페이지 번호 영역 높이
-        const safeAreaBottom = 30; // 하단 여백
-        pageHeight = window.innerHeight - paddingTop - paddingBottom - pageNumberHeight - safeAreaBottom;
-        
-        // 더 정확한 줄 높이 측정
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = 'A<br>A<br>A';
-        tempDiv.style.fontSize = getComputedStyle(document.body).fontSize;
-        tempDiv.style.lineHeight = getComputedStyle(document.body).lineHeight;
-        tempDiv.style.fontFamily = getComputedStyle(document.body).fontFamily;
-        tempDiv.style.fontWeight = getComputedStyle(document.body).fontWeight;
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.visibility = 'hidden';
-        tempDiv.style.left = '-9999px';
-        tempDiv.style.top = '-9999px';
-        tempDiv.style.width = 'auto';
-        tempDiv.style.height = 'auto';
-        document.body.appendChild(tempDiv);
-        
-        lineHeight = tempDiv.offsetHeight / 3; // 3줄이므로 3으로 나누기
-        document.body.removeChild(tempDiv);
-        
-        // 최소값 보장
-        if (lineHeight <= 0) {
-            lineHeight = parseFloat(getComputedStyle(document.body).fontSize) * 1.2;
-        }
-        if (pageHeight <= 0) {
-            pageHeight = window.innerHeight * 0.8;
-        }
-        
-        log(\`화면 크기: \${window.innerWidth}x\${window.innerHeight}\`);
-        log(\`사용 가능한 페이지 높이: \${pageHeight}px, 실제 줄 높이: \${lineHeight}px\`);
-    }
-    
-    // 개선된 페이지 분할 함수
-    function splitIntoPages() {
+    // 스크롤 기반 페이지 분할 함수
+    function splitIntoPagesByScroll() {
         if (!isPageMode) {
             totalPages = 1;
             currentPage = 1;
             return;
         }
         
-        calculateDimensions();
+        log('🔄 스크롤 기반 페이지 분할 시작');
         
-        if (lineHeight <= 0 || pageHeight <= 0) {
-            log('치수 계산 실패, 전체를 1페이지로 설정');
-            totalPages = 1;
-            pages = [originalContent];
-            sendMessage('totalPages', totalPages);
-            updatePageDisplay();
-            return;
+        // 측정용 컨테이너 설정
+        const hiddenContainer = document.getElementById('hiddenContainer');
+        const hiddenContent = document.getElementById('hiddenContent');
+        
+        // 실제 스크롤 모드 스타일 적용
+        hiddenContainer.style.visibility = 'visible';
+        hiddenContainer.style.position = 'absolute';
+        hiddenContainer.style.top = '0';
+        hiddenContainer.style.left = '0';
+        hiddenContainer.style.width = '100%';
+        hiddenContainer.style.height = 'auto';
+        hiddenContainer.style.overflow = 'visible';
+        hiddenContainer.style.zIndex = '-1';
+        
+        // 페이지 높이 계산 (페이지 번호 공간 제외)
+        const pageHeight = window.innerHeight - ${textViewerOptions.marginVertical * 2} - 60;
+        
+        log(\`📏 페이지 높이: \${pageHeight}px\`);
+        
+        // 전체 컨텐츠의 실제 높이 측정
+        const contentHeight = hiddenContent.scrollHeight;
+        log(\`📏 전체 컨텐츠 높이: \${contentHeight}px\`);
+        
+        // 스크롤 위치 기반으로 페이지 분할점 계산
+        pageBreakPositions = [];
+        let currentScrollTop = 0;
+        
+        while (currentScrollTop < contentHeight) {
+            pageBreakPositions.push(currentScrollTop);
+            currentScrollTop += pageHeight;
         }
         
-        // 한 페이지에 들어갈 수 있는 줄 수 (여유분 고려)
-        const linesPerPage = Math.floor(pageHeight / lineHeight) - 1; // 1줄 여유분
-        log(\`페이지당 줄 수: \${linesPerPage} (여유분 1줄 제외)\`);
+        // 마지막 페이지 처리
+        if (pageBreakPositions[pageBreakPositions.length - 1] < contentHeight) {
+            pageBreakPositions.push(contentHeight);
+        }
         
-        if (linesPerPage <= 0) {
-            totalPages = 1;
-            pages = [originalContent];
-            log('페이지당 줄 수가 0 이하, 전체를 1페이지로 설정');
-        } else {
-            // 텍스트를 줄 단위로 분할
-            const lines = originalContent.split('<br>');
-            pages = [];
+        totalPages = Math.max(1, pageBreakPositions.length - 1);
+        
+        log(\`📄 총 페이지 수: \${totalPages}\`);
+        log(\`📍 페이지 분할점: \${pageBreakPositions.join(', ')}\`);
+        
+        // 각 페이지별 콘텐츠 생성
+        pages = [];
+        for (let i = 0; i < totalPages; i++) {
+            const startPos = pageBreakPositions[i];
+            const endPos = pageBreakPositions[i + 1] || contentHeight;
             
-            // 페이지 분할 시 마지막 줄이 잘리지 않도록 처리
-            for (let i = 0; i < lines.length; i += linesPerPage) {
-                let endIndex = Math.min(i + linesPerPage, lines.length);
-                
-                // 마지막 페이지가 아니고, 남은 줄이 3줄 이하면 현재 페이지에 포함
-                if (endIndex < lines.length && (lines.length - endIndex) <= 3) {
-                    endIndex = lines.length;
-                }
-                
-                const pageLines = lines.slice(i, endIndex);
-                const pageContent = pageLines.join('<br>');
-                
-                if (pageContent.trim().length > 0) {
-                    pages.push(pageContent);
-                }
-                
-                // 마지막 페이지까지 처리했으면 종료
-                if (endIndex >= lines.length) {
-                    break;
-                }
-            }
+            // 해당 페이지에 해당하는 콘텐츠 범위 계산
+            const pageContent = extractContentByScrollPosition(startPos, endPos, pageHeight);
+            pages.push(pageContent);
             
-            totalPages = Math.max(1, pages.length);
+            log(\`📄 페이지 \${i + 1}: \${startPos}-\${endPos}px (길이: \${pageContent.length})\`);
         }
         
         // 현재 페이지가 범위를 벗어나면 조정
@@ -334,15 +299,89 @@ export default function TextViewer({ uri }: TextViewerProps) {
             currentPage = 1;
         }
         
-        log(\`=== 페이지 분할 결과 ===\`);
-        log(\`전체 줄 수: \${originalContent.split('<br>').length}\`);
-        log(\`전체 페이지 수: \${totalPages}\`);
-        log(\`현재 페이지: \${currentPage}\`);
-        log(\`각 페이지 줄 수: \${pages.map(p => p.split('<br>').length).join(', ')}\`);
-        log(\`======================\`);
+        // 측정용 컨테이너 숨기기
+        hiddenContainer.style.visibility = 'hidden';
         
         sendMessage('totalPages', totalPages);
         updatePageDisplay();
+    }
+    
+    // 스크롤 위치에 따른 콘텐츠 추출
+    function extractContentByScrollPosition(startPos, endPos, pageHeight) {
+        const hiddenContent = document.getElementById('hiddenContent');
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = originalContent;
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.top = '0';
+        tempDiv.style.left = '0';
+        tempDiv.style.width = '100%';
+        tempDiv.style.visibility = 'hidden';
+        tempDiv.style.padding = \`\${${textViewerOptions.marginVertical}}px \${${textViewerOptions.marginHorizontal}}px\`;
+        tempDiv.style.fontSize = '${textViewerOptions.fontSize}px';
+        tempDiv.style.lineHeight = '${textViewerOptions.lineHeight}';
+        tempDiv.style.fontFamily = getComputedStyle(document.body).fontFamily;
+        tempDiv.style.fontWeight = '${textViewerOptions.fontWeight}';
+        tempDiv.style.whiteSpace = 'pre-wrap';
+        tempDiv.style.wordWrap = 'break-word';
+        
+        document.body.appendChild(tempDiv);
+        
+        try {
+            // 텍스트 노드들을 순회하면서 스크롤 위치에 맞는 부분 찾기
+            const walker = document.createTreeWalker(
+                tempDiv,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+            
+            let accumulatedHeight = 0;
+            let pageStartFound = false;
+            let pageContent = '';
+            let node;
+            
+            while (node = walker.nextNode()) {
+                const textNode = node as Text;
+                const parentElement = textNode.parentElement;
+                
+                if (parentElement) {
+                    const rect = parentElement.getBoundingClientRect();
+                    const nodeHeight = rect.height;
+                    
+                    // 시작 위치 찾기
+                    if (!pageStartFound && accumulatedHeight + nodeHeight >= startPos) {
+                        pageStartFound = true;
+                    }
+                    
+                    // 페이지 내용 수집
+                    if (pageStartFound && accumulatedHeight < endPos) {
+                        pageContent += textNode.textContent || '';
+                        
+                        // 페이지 끝에 도달했으면 중단
+                        if (accumulatedHeight + nodeHeight >= endPos) {
+                            break;
+                        }
+                    }
+                    
+                    accumulatedHeight += nodeHeight;
+                }
+            }
+            
+            // 내용이 없으면 원본 내용의 일부를 추정으로 가져오기
+            if (!pageContent.trim()) {
+                const lines = originalContent.split('<br>');
+                const linesPerPage = Math.floor(pageHeight / (${textViewerOptions.fontSize} * ${textViewerOptions.lineHeight}));
+                const startLine = Math.floor(startPos / (${textViewerOptions.fontSize} * ${textViewerOptions.lineHeight}));
+                const endLine = Math.min(lines.length, startLine + linesPerPage);
+                
+                pageContent = lines.slice(startLine, endLine).join('<br>');
+            }
+            
+            return pageContent;
+            
+        } finally {
+            document.body.removeChild(tempDiv);
+        }
     }
     
     // 페이지 표시 업데이트
@@ -354,10 +393,10 @@ export default function TextViewer({ uri }: TextViewerProps) {
             if (pages.length > 0 && currentPage >= 1 && currentPage <= pages.length) {
                 const content = pages[currentPage - 1] || '';
                 pageContent.innerHTML = content;
-                log(\`페이지 \${currentPage} 표시 (줄 수: \${content.split('<br>').length})\`);
+                log(\`📄 페이지 \${currentPage} 표시 (길이: \${content.length})\`);
             } else {
                 pageContent.innerHTML = originalContent;
-                log(\`페이지 범위 오류, 전체 내용 표시\`);
+                log(\`⚠️ 페이지 범위 오류, 전체 내용 표시\`);
             }
             
             if (pageNumber) {
@@ -370,14 +409,14 @@ export default function TextViewer({ uri }: TextViewerProps) {
         sendMessage('pageChange', currentPage);
     }
     
-    // 페이지 이동 함수 개선
+    // 페이지 이동 함수
     function goToPage(page) {
         if (!isPageMode) {
-            log('페이지 모드가 아님, 이동 무시');
+            log('⚠️ 페이지 모드가 아님, 이동 무시');
             return;
         }
         
-        log(\`페이지 이동 요청: \${currentPage} → \${page} (총 \${totalPages}페이지)\`);
+        log(\`📍 페이지 이동 요청: \${currentPage} → \${page} (총 \${totalPages}페이지)\`);
         
         if (page >= 1 && page <= totalPages) {
             // 페이지 전환 애니메이션
@@ -393,10 +432,10 @@ export default function TextViewer({ uri }: TextViewerProps) {
                     content.classList.remove('page-transition');
                 }, 200);
                 
-                log(\`페이지 \${page}로 이동 완료\`);
+                log(\`✅ 페이지 \${page}로 이동 완료\`);
             }, 100);
         } else {
-            log(\`잘못된 페이지 번호: \${page} (유효 범위: 1-\${totalPages})\`);
+            log(\`❌ 잘못된 페이지 번호: \${page} (유효 범위: 1-\${totalPages})\`);
         }
     }
     
@@ -405,7 +444,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         const body = document.body;
         const pageNumber = document.getElementById('pageNumber');
         
-        log(\`뷰 모드 변경: \${isPageMode ? 'page' : 'scroll'} → \${mode}\`);
+        log(\`🔄 뷰 모드 변경: \${isPageMode ? 'page' : 'scroll'} → \${mode}\`);
         
         isPageMode = (mode === 'page');
         
@@ -417,7 +456,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
                 newPageNumber.id = 'pageNumber';
                 document.body.appendChild(newPageNumber);
             }
-            splitIntoPages();
+            splitIntoPagesByScroll();
         } else {
             body.className = 'scroll-mode';
             if (pageNumber) {
@@ -435,23 +474,34 @@ export default function TextViewer({ uri }: TextViewerProps) {
     function updateSettings(options) {
         const body = document.body;
         const container = document.getElementById('container');
+        const hiddenContent = document.getElementById('hiddenContent');
         
         let needsReflow = false;
         
         if (options.fontSize) {
             body.style.fontSize = options.fontSize + 'px';
+            if (hiddenContent) {
+                hiddenContent.style.fontSize = options.fontSize + 'px';
+            }
             needsReflow = true;
         }
         
         if (options.lineHeight) {
             body.style.lineHeight = options.lineHeight;
+            if (hiddenContent) {
+                hiddenContent.style.lineHeight = options.lineHeight;
+            }
             needsReflow = true;
         }
         
         if (options.fontFamily) {
-            body.style.fontFamily = options.fontFamily === 'System' 
+            const fontFamily = options.fontFamily === 'System' 
                 ? '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui'
                 : options.fontFamily;
+            body.style.fontFamily = fontFamily;
+            if (hiddenContent) {
+                hiddenContent.style.fontFamily = fontFamily;
+            }
             needsReflow = true;
         }
         
@@ -464,14 +514,24 @@ export default function TextViewer({ uri }: TextViewerProps) {
         }
         
         if (options.marginHorizontal !== undefined) {
-            container.style.paddingLeft = options.marginHorizontal + 'px';
-            container.style.paddingRight = options.marginHorizontal + 'px';
+            const margin = options.marginHorizontal + 'px';
+            container.style.paddingLeft = margin;
+            container.style.paddingRight = margin;
+            if (hiddenContent) {
+                hiddenContent.style.paddingLeft = margin;
+                hiddenContent.style.paddingRight = margin;
+            }
             needsReflow = true;
         }
         
         if (options.marginVertical !== undefined) {
-            container.style.paddingTop = options.marginVertical + 'px';
-            container.style.paddingBottom = options.marginVertical + 'px';
+            const margin = options.marginVertical + 'px';
+            container.style.paddingTop = margin;
+            container.style.paddingBottom = margin;
+            if (hiddenContent) {
+                hiddenContent.style.paddingTop = margin;
+                hiddenContent.style.paddingBottom = margin;
+            }
             needsReflow = true;
         }
         
@@ -481,19 +541,24 @@ export default function TextViewer({ uri }: TextViewerProps) {
         }
         
         if (options.fontWeight) {
-            body.style.fontWeight = parseInt(options.fontWeight, 10);
+            const fontWeight = parseInt(options.fontWeight, 10);
+            body.style.fontWeight = fontWeight;
+            if (hiddenContent) {
+                hiddenContent.style.fontWeight = fontWeight;
+            }
+            needsReflow = true;
         }
         
         // 페이지 모드에서 레이아웃 관련 설정이 변경되면 다시 분할
         if (isPageMode && needsReflow) {
-            log('설정 변경으로 인한 페이지 재분할');
+            log('⚡ 설정 변경으로 인한 페이지 재분할');
             setTimeout(() => {
-                splitIntoPages();
+                splitIntoPagesByScroll();
             }, 100);
         }
     }
     
-    // 터치 이벤트 처리 개선
+    // 터치 이벤트 처리
     let startX = 0;
     let startY = 0;
     
@@ -514,10 +579,10 @@ export default function TextViewer({ uri }: TextViewerProps) {
         // 수평 스와이프가 수직 스와이프보다 클 때만 페이지 넘김
         if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
             if (diffX > 0 && currentPage < totalPages) {
-                log('스와이프: 다음 페이지');
+                log('👉 스와이프: 다음 페이지');
                 goToPage(currentPage + 1);
             } else if (diffX < 0 && currentPage > 1) {
-                log('스와이프: 이전 페이지');
+                log('👈 스와이프: 이전 페이지');
                 goToPage(currentPage - 1);
             }
         }
@@ -530,26 +595,29 @@ export default function TextViewer({ uri }: TextViewerProps) {
     // 창 크기 변경 시 페이지 재계산
     window.addEventListener('resize', function() {
         if (isPageMode) {
-            log('화면 크기 변경, 페이지 재분할');
+            log('📱 화면 크기 변경, 페이지 재분할');
             setTimeout(() => {
-                splitIntoPages();
+                splitIntoPagesByScroll();
             }, 100);
         }
     });
     
     // 초기화
     document.addEventListener('DOMContentLoaded', function() {
-        log('WebView 초기화 시작');
+        log('🚀 WebView 초기화 시작');
         
         // 초기 페이지 설정
         const lastPage = ${textViewerOptions.lastPage || 1};
         currentPage = lastPage;
         
         if (isPageMode) {
-            log('페이지 모드로 초기화');
-            splitIntoPages();
+            log('📄 페이지 모드로 초기화');
+            // DOM이 완전히 로드된 후 실행
+            setTimeout(() => {
+                splitIntoPagesByScroll();
+            }, 100);
         } else {
-            log('스크롤 모드로 초기화');
+            log('📜 스크롤 모드로 초기화');
             sendMessage('totalPages', 1);
             sendMessage('pageChange', 1);
         }
@@ -561,7 +629,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
     document.addEventListener('message', function(event) {
         try {
             const message = JSON.parse(event.data);
-            log(\`메시지 수신: \${message.type}\`);
+            log(\`📨 메시지 수신: \${message.type}\`);
             
             switch (message.type) {
                 case 'goToPage':
@@ -572,7 +640,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
                     break;
             }
         } catch (e) {
-            log('메시지 처리 오류: ' + e.message);
+            log('❌ 메시지 처리 오류: ' + e.message);
         }
     });
     
@@ -585,7 +653,8 @@ export default function TextViewer({ uri }: TextViewerProps) {
         getTotalPages: () => totalPages,
         isPageMode: () => isPageMode,
         getPages: () => pages,
-        splitIntoPages
+        splitIntoPagesByScroll,
+        getPageBreakPositions: () => pageBreakPositions
     };
     </script>
 </body>
@@ -695,7 +764,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
   }
 
   if (error) {
-    return <ViewerError message={`텍스트 파일을 불러오는 중 오류가 발생했습니다: ${error}`} />;
+    return <ViewerError message={error} />;
   }
 
   return (
@@ -734,7 +803,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         </View>
       </TouchableWithoutFeedback>
 
-      <SettingsBottomSheet
+      <SettingBottomSheet
         title="텍스트 설정"
         isVisible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
