@@ -1,14 +1,13 @@
-import { Overlay, SettingsBottomSheet } from '@/components/common';
+import { Overlay } from '@/components/common';
+import SettingBottomSheet from '@/components/settings/SettingBottomSheet';
 import ViewerError from '@/components/viewers/ViewerError';
 import ViewerLoading from '@/components/viewers/ViewerLoading';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { getEpubSections } from '@/utils/sections/epubSections';
 import { Reader, ReaderProvider, Themes, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/file-system';
-import { useNavigation } from '@react-navigation/native';
 import { useMemo, useState } from 'react';
-import { Pressable, useWindowDimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Pressable, useWindowDimensions, View } from 'react-native';
 
 type Location = {
   start?: { displayed?: { page?: number }; cfi?: string };
@@ -27,7 +26,6 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  const navigation = useNavigation();
   const { theme, goToLocation } = useReader();
 
   // EPUB 뷰어 설정
@@ -46,7 +44,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <ReaderProvider>
         <Pressable
           style={{ flex: 1, backgroundColor: epubViewerOptions.backgroundColor }}
@@ -95,7 +93,6 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
 
           <Overlay
             visible={overlayVisible}
-            onBack={() => navigation.goBack()}
             onSettings={() => setSettingsVisible(true)}
             showSlider={totalPages > 1}
             currentPage={currentPage}
@@ -108,7 +105,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
           />
         </Pressable>
 
-        <SettingsBottomSheet
+        <SettingBottomSheet
           title="EPUB 설정"
           isVisible={settingsVisible}
           onClose={() => setSettingsVisible(false)}
@@ -116,6 +113,6 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
           onOptionChange={handleOptionChange}
         />
       </ReaderProvider>
-    </SafeAreaView>
+    </View>
   );
 }

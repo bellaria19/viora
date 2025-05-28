@@ -14,7 +14,9 @@ export default function RecentScreen() {
 
   const { handleFilePick } = useFilePicker({
     existingFiles: recentFiles,
-    onFilesProcessed: () => router.push('/files'),
+    onFilesProcessed: async () => {
+      await loadRecentFiles();
+    },
   });
 
   const loadRecentFiles = async () => {

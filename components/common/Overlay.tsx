@@ -1,10 +1,11 @@
 import { FontAwesome6 } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import { useNavigation } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface OverlayProps {
   visible: boolean;
-  onBack?: () => void;
   onSettings?: () => void;
   showSlider?: boolean;
   currentPage?: number;
@@ -12,31 +13,39 @@ interface OverlayProps {
   onPageChange?: (page: number) => void;
 }
 
-const BAR_HEIGHT = 70; // topBar의 height와 동일하게 맞춰줍니다.
-const BOTTOM_BAR_HEIGHT = BAR_HEIGHT * 1.5;
-
 export default function Overlay({
   visible,
-  onBack,
   onSettings,
   showSlider = false,
   currentPage = 1,
   totalPages = 1,
   onPageChange,
 }: OverlayProps) {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  console.log('insets', insets);
   if (!visible) return null;
 
   return (
     <View style={styles.overlay} pointerEvents="box-none">
-      <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack} style={styles.iconButton}>
+      <View
+        style={[
+          styles.topBar,
+          {
+            paddingTop: (insets.top || 0) + 8,
+            minHeight: (insets.top || 0) + 44,
+            paddingHorizontal: (insets.top || 0) > 0 ? 16 : 28,
+          },
+        ]}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <FontAwesome6 name="chevron-left" size={28} color="#fff" />
         </TouchableOpacity>
         <TouchableOpacity onPress={onSettings} style={styles.iconButton}>
           <FontAwesome6 name="gear" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
-      <View style={[styles.bottomBar, { height: showSlider ? BOTTOM_BAR_HEIGHT : BAR_HEIGHT }]}>
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom }]}>
         {showSlider && (
           <>
             <View style={styles.pageNavRow}>
@@ -58,6 +67,7 @@ export default function Overlay({
                 <FontAwesome6 name="chevron-right" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
+
             <Slider
               style={styles.slider}
               minimumValue={1}
@@ -86,14 +96,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingTop: 16,
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    height: BAR_HEIGHT,
-  },
-  topRightButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingBottom: 16,
   },
   iconButton: {
     padding: 8,
@@ -102,6 +105,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   pageNavRow: {
     flexDirection: 'row',

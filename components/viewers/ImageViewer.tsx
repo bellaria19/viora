@@ -1,13 +1,12 @@
-import { Overlay, SettingsBottomSheet } from '@/components/common';
+import { Overlay } from '@/components/common';
+import SettingBottomSheet from '@/components/settings/SettingBottomSheet';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { getImageSections } from '@/utils/sections/imageSections';
 import { FontAwesome6 } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { Image as ExpoImage } from 'expo-image';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Dimensions,
   StyleSheet,
   Text,
   TouchableWithoutFeedback,
@@ -17,9 +16,7 @@ import {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import PagerView from 'react-native-pager-view';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ImageViewerProps {
   uri: string | string[];
@@ -37,7 +34,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
 
-  const navigation = useNavigation();
   const pagerRef = useRef<PagerView>(null);
   const { imageViewerOptions, updateImageViewerOptions } = useViewerSettings();
 
@@ -266,7 +262,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   }, []);
 
   return (
-    <SafeAreaView style={{ flex: 1, paddingTop: insets.bottom }}>
+    <View style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={{ flex: 1, backgroundColor: imageViewerOptions.backgroundColor }}>
           <GestureDetector gesture={composed}>
@@ -284,7 +280,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
 
           <Overlay
             visible={overlayVisible}
-            onBack={() => navigation.goBack()}
             onSettings={() => setSettingsVisible(true)}
             showSlider={images.length > 1}
             currentPage={index + 1}
@@ -294,14 +289,14 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
         </View>
       </TouchableWithoutFeedback>
 
-      <SettingsBottomSheet
+      <SettingBottomSheet
         title="이미지 설정"
         isVisible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
         sections={sections}
         onOptionChange={handleOptionChange}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

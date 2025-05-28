@@ -19,7 +19,7 @@ import { sortFiles } from '@/utils/sorting';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FilesScreen() {
@@ -39,6 +39,8 @@ export default function FilesScreen() {
   const [renameInput, setRenameInput] = useState('');
   const [showOptionModal, setShowOptionModal] = useState(false);
 
+  const [isPicking, setIsPicking] = useState(false);
+
   const {
     showDuplicateModal,
     currentDuplicateFile,
@@ -49,7 +51,9 @@ export default function FilesScreen() {
     handleDuplicateOverwrite,
   } = useFilePicker({
     existingFiles: files,
-    onFilesProcessed: () => router.push('/files'),
+    onFilesProcessed: async () => {
+      await loadFiles();
+    },
   });
 
   const loadFiles = useCallback(async () => {
@@ -168,6 +172,15 @@ export default function FilesScreen() {
     setShowDeleteModal(true);
   };
 
+  const handleFilePickWithLoading = async () => {
+    setIsPicking(true);
+    try {
+      await handleFilePick();
+    } finally {
+      setIsPicking(false);
+    }
+  };
+
   const renderHeader = () => (
     <View style={styles.header}>
       <View style={{ flex: 1 }}>
@@ -206,14 +219,14 @@ export default function FilesScreen() {
                 iconName="magnifying-glass-minus"
                 message="검색 결과가 없습니다."
                 buttonLabel="파일 추가하기"
-                onPress={handleFilePick}
+                onPress={handleFilePickWithLoading}
               />
             ) : (
               <EmptyState
                 iconName="folder-open"
                 message="파일을 추가해주세요."
                 buttonLabel="파일 추가하기"
-                onPress={handleFilePick}
+                onPress={handleFilePickWithLoading}
               />
             )
           }
@@ -225,7 +238,7 @@ export default function FilesScreen() {
 
         {files.length > 0 && (
           <FloatingButton
-            onPress={handleFilePick}
+            onPress={handleFilePickWithLoading}
             iconName="plus"
             backgroundColor={colors.primary}
           />
@@ -263,6 +276,21 @@ export default function FilesScreen() {
           onClose={handleDeleteClose}
           onConfirm={handleDeleteConfirm}
         />
+
+        {isPicking && (
+          <View
+            style={{
+              ...StyleSheet.absoluteFillObject,
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              justifyContent: 'center',
+              alignItems: 'center',
+              zIndex: 100,
+            }}
+            pointerEvents="auto"
+          >
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );

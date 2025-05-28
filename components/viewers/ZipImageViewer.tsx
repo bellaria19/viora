@@ -266,7 +266,7 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
       <ViewerLoading
         message={
           isLoading
-            ? 'ZIP 파일 처리 중...'
+            ? 'ZIP 파일 압축 해제 중...'
             : 'ZIP 파일이 비밀번호로 보호되어 있습니다.\n 비밀번호를 입력해주세요.'
         }
       />

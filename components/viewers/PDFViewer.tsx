@@ -1,11 +1,10 @@
-import { Overlay, SettingsBottomSheet } from '@/components/common';
+import { Overlay } from '@/components/common';
+import SettingBottomSheet from '@/components/settings/SettingBottomSheet';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { getPdfSections } from '@/utils/sections/pdfSections';
-import { useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TouchableWithoutFeedback, View } from 'react-native';
 import Pdf from 'react-native-pdf';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface PDFViewerProps {
   uri: string;
@@ -17,7 +16,6 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
   const [totalPages, setTotalPages] = useState(1);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const pdfRef = useRef<any>(null);
-  const navigation = useNavigation();
   const { pdfViewerOptions, updatePDFViewerOptions } = useViewerSettings();
 
   // 최근 본 페이지 복원
@@ -67,7 +65,7 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
   const sections = useMemo(() => getPdfSections(pdfViewerOptions), [pdfViewerOptions]);
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={{ flex: 1 }}>
           <Pdf
@@ -89,7 +87,6 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
           />
           <Overlay
             visible={overlayVisible}
-            onBack={() => navigation.goBack()}
             onSettings={() => setSettingsVisible(true)}
             showSlider={totalPages > 1}
             currentPage={currentPage}
@@ -98,13 +95,13 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
           />
         </View>
       </TouchableWithoutFeedback>
-      <SettingsBottomSheet
+      <SettingBottomSheet
         title="PDF 설정"
         isVisible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
         sections={sections}
         onOptionChange={handleOptionChange}
       />
-    </SafeAreaView>
+    </View>
   );
 }

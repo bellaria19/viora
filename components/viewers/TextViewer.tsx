@@ -1,12 +1,11 @@
 import { Overlay, SettingsBottomSheet } from '@/components/common';
+import ViewerError from '@/components/viewers/ViewerError';
 import ViewerLoading from '@/components/viewers/ViewerLoading';
 import { useViewerSettings } from '@/hooks/useViewerSettings';
 import { getTextSections } from '@/utils/sections/textSections';
-import { useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, TouchableWithoutFeedback, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 interface TextViewerProps {
@@ -29,7 +28,6 @@ export default function TextViewer({ uri }: TextViewerProps) {
   const [totalPages, setTotalPages] = useState(1);
   const [webViewReady, setWebViewReady] = useState(false);
   const webViewRef = useRef<WebView>(null);
-  const navigation = useNavigation();
   const { textViewerOptions, updateTextViewerOptions } = useViewerSettings();
 
   // 뷰 모드 (page 또는 scroll)
@@ -66,6 +64,8 @@ export default function TextViewer({ uri }: TextViewerProps) {
   );
 
   // HTML 템플릿 생성
+  // components/viewers/TextViewer.tsx - 페이지 분할 개선된 부분
+
   const htmlContent = useMemo(() => {
     const escapedContent = content
       .replace(/&/g, '&amp;')
@@ -135,6 +135,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
             height: 100vh;
             display: flex;
             flex-direction: column;
+            box-sizing: border-box;
         }
         
         .page-mode #content {
@@ -142,12 +143,22 @@ export default function TextViewer({ uri }: TextViewerProps) {
             overflow: hidden;
             display: flex;
             align-items: flex-start;
-            padding-bottom: 40px; /* 페이지 번호 공간 */
+            justify-content: flex-start;
+            padding-bottom: 60px; /* 페이지 번호 공간 증가 */
+            box-sizing: border-box;
         }
         
         .page-content {
             width: 100%;
             line-height: ${textViewerOptions.lineHeight};
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            box-sizing: border-box;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
         
         .page-number {
@@ -212,30 +223,50 @@ export default function TextViewer({ uri }: TextViewerProps) {
     // 페이지 높이와 줄 높이 정확히 계산
     function calculateDimensions() {
         const container = document.getElementById('container');
-        const containerRect = container.getBoundingClientRect();
-        const containerStyle = getComputedStyle(container);
+        const content = document.getElementById('content');
         
+        if (!container || !content) {
+            log('컨테이너 또는 콘텐츠 요소를 찾을 수 없음');
+            return;
+        }
+        
+        const containerStyle = getComputedStyle(container);
         const paddingTop = parseInt(containerStyle.paddingTop) || 0;
         const paddingBottom = parseInt(containerStyle.paddingBottom) || 0;
         
-        // 페이지 번호 공간 제외
-        pageHeight = window.innerHeight - paddingTop - paddingBottom - 60;
+        // 실제 사용 가능한 콘텐츠 높이 계산 (페이지 번호 공간과 여백 제외)
+        const pageNumberHeight = 60; // 페이지 번호 영역 높이
+        const safeAreaBottom = 30; // 하단 여백
+        pageHeight = window.innerHeight - paddingTop - paddingBottom - pageNumberHeight - safeAreaBottom;
         
-        // 실제 줄 높이 측정
-        const tempSpan = document.createElement('span');
-        tempSpan.innerHTML = 'A<br>B';
-        tempSpan.style.fontSize = getComputedStyle(document.body).fontSize;
-        tempSpan.style.lineHeight = getComputedStyle(document.body).lineHeight;
-        tempSpan.style.fontFamily = getComputedStyle(document.body).fontFamily;
-        tempSpan.style.position = 'absolute';
-        tempSpan.style.visibility = 'hidden';
-        document.body.appendChild(tempSpan);
+        // 더 정확한 줄 높이 측정
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = 'A<br>A<br>A';
+        tempDiv.style.fontSize = getComputedStyle(document.body).fontSize;
+        tempDiv.style.lineHeight = getComputedStyle(document.body).lineHeight;
+        tempDiv.style.fontFamily = getComputedStyle(document.body).fontFamily;
+        tempDiv.style.fontWeight = getComputedStyle(document.body).fontWeight;
+        tempDiv.style.position = 'absolute';
+        tempDiv.style.visibility = 'hidden';
+        tempDiv.style.left = '-9999px';
+        tempDiv.style.top = '-9999px';
+        tempDiv.style.width = 'auto';
+        tempDiv.style.height = 'auto';
+        document.body.appendChild(tempDiv);
         
-        lineHeight = tempSpan.offsetHeight / 2; // 두 줄이므로 2로 나누기
-        document.body.removeChild(tempSpan);
+        lineHeight = tempDiv.offsetHeight / 3; // 3줄이므로 3으로 나누기
+        document.body.removeChild(tempDiv);
+        
+        // 최소값 보장
+        if (lineHeight <= 0) {
+            lineHeight = parseFloat(getComputedStyle(document.body).fontSize) * 1.2;
+        }
+        if (pageHeight <= 0) {
+            pageHeight = window.innerHeight * 0.8;
+        }
         
         log(\`화면 크기: \${window.innerWidth}x\${window.innerHeight}\`);
-        log(\`페이지 높이: \${pageHeight}px, 줄 높이: \${lineHeight}px\`);
+        log(\`사용 가능한 페이지 높이: \${pageHeight}px, 실제 줄 높이: \${lineHeight}px\`);
     }
     
     // 개선된 페이지 분할 함수
@@ -248,14 +279,18 @@ export default function TextViewer({ uri }: TextViewerProps) {
         
         calculateDimensions();
         
-        if (lineHeight <= 0) {
-            log('줄 높이 계산 실패, 기본값 사용');
-            lineHeight = 24; // 기본값
+        if (lineHeight <= 0 || pageHeight <= 0) {
+            log('치수 계산 실패, 전체를 1페이지로 설정');
+            totalPages = 1;
+            pages = [originalContent];
+            sendMessage('totalPages', totalPages);
+            updatePageDisplay();
+            return;
         }
         
-        // 한 페이지에 들어갈 수 있는 줄 수
-        const linesPerPage = Math.floor(pageHeight / lineHeight);
-        log(\`페이지당 줄 수: \${linesPerPage}\`);
+        // 한 페이지에 들어갈 수 있는 줄 수 (여유분 고려)
+        const linesPerPage = Math.floor(pageHeight / lineHeight) - 1; // 1줄 여유분
+        log(\`페이지당 줄 수: \${linesPerPage} (여유분 1줄 제외)\`);
         
         if (linesPerPage <= 0) {
             totalPages = 1;
@@ -266,13 +301,28 @@ export default function TextViewer({ uri }: TextViewerProps) {
             const lines = originalContent.split('<br>');
             pages = [];
             
+            // 페이지 분할 시 마지막 줄이 잘리지 않도록 처리
             for (let i = 0; i < lines.length; i += linesPerPage) {
-                const pageLines = lines.slice(i, i + linesPerPage);
-                pages.push(pageLines.join('<br>'));
+                let endIndex = Math.min(i + linesPerPage, lines.length);
+                
+                // 마지막 페이지가 아니고, 남은 줄이 3줄 이하면 현재 페이지에 포함
+                if (endIndex < lines.length && (lines.length - endIndex) <= 3) {
+                    endIndex = lines.length;
+                }
+                
+                const pageLines = lines.slice(i, endIndex);
+                const pageContent = pageLines.join('<br>');
+                
+                if (pageContent.trim().length > 0) {
+                    pages.push(pageContent);
+                }
+                
+                // 마지막 페이지까지 처리했으면 종료
+                if (endIndex >= lines.length) {
+                    break;
+                }
             }
             
-            // 빈 페이지 제거
-            pages = pages.filter(page => page.trim().length > 0);
             totalPages = Math.max(1, pages.length);
         }
         
@@ -288,7 +338,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         log(\`전체 줄 수: \${originalContent.split('<br>').length}\`);
         log(\`전체 페이지 수: \${totalPages}\`);
         log(\`현재 페이지: \${currentPage}\`);
-        log(\`페이지별 내용 길이: \${pages.map(p => p.length).join(', ')}\`);
+        log(\`각 페이지 줄 수: \${pages.map(p => p.split('<br>').length).join(', ')}\`);
         log(\`======================\`);
         
         sendMessage('totalPages', totalPages);
@@ -304,7 +354,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
             if (pages.length > 0 && currentPage >= 1 && currentPage <= pages.length) {
                 const content = pages[currentPage - 1] || '';
                 pageContent.innerHTML = content;
-                log(\`페이지 \${currentPage} 표시 (길이: \${content.length})\`);
+                log(\`페이지 \${currentPage} 표시 (줄 수: \${content.split('<br>').length})\`);
             } else {
                 pageContent.innerHTML = originalContent;
                 log(\`페이지 범위 오류, 전체 내용 표시\`);
@@ -645,28 +695,11 @@ export default function TextViewer({ uri }: TextViewerProps) {
   }
 
   if (error) {
-    return (
-      <SafeAreaView style={{ flex: 1 }}>
-        <View style={[styles.centerContainer, { backgroundColor: themeStyles.backgroundColor }]}>
-          <Text style={[styles.statusText, { color: themeStyles.textColor, marginBottom: 20 }]}>
-            {error}
-          </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadTextContent}>
-            <Text style={styles.retryText}>다시 시도</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: '#757575', marginTop: 10 }]}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.retryText}>돌아가기</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
+    return <ViewerError message={`텍스트 파일을 불러오는 중 오류가 발생했습니다: ${error}`} />;
   }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={() => setOverlayVisible((v) => !v)}>
         <View style={{ flex: 1, backgroundColor: themeStyles.backgroundColor }}>
           {content && (
@@ -692,7 +725,6 @@ export default function TextViewer({ uri }: TextViewerProps) {
 
           <Overlay
             visible={overlayVisible}
-            onBack={() => navigation.goBack()}
             onSettings={() => setSettingsVisible(true)}
             showSlider={isPageMode && totalPages > 1}
             currentPage={currentPage}
@@ -709,7 +741,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         sections={sections}
         onOptionChange={handleOptionChange}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

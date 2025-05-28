@@ -93,7 +93,14 @@ export default function SettingBottomSheet({
       enablePanDownToClose
       enableDynamicSizing={false}
       // 가로모드에서 중앙 정렬
-      style={isLandscape ? styles.bottomSheetLandscape : undefined}
+      style={
+        isLandscape
+          ? {
+              alignSelf: 'center',
+              width: '100%',
+            }
+          : undefined
+      }
       backgroundStyle={styles.bottomSheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
     >
@@ -110,10 +117,6 @@ export default function SettingBottomSheet({
 }
 
 const styles = StyleSheet.create({
-  bottomSheetLandscape: {
-    alignSelf: 'center',
-    width: '100%',
-  },
   bottomSheetBackground: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
