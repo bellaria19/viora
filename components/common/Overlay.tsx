@@ -23,7 +23,7 @@ export default function Overlay({
 }: OverlayProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
-  console.log('insets', insets);
+
   if (!visible) return null;
 
   return (

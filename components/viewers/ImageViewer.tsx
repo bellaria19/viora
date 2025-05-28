@@ -16,7 +16,6 @@ import {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import PagerView from 'react-native-pager-view';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ImageViewerProps {
   uri: string | string[];
@@ -48,8 +47,6 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
   const [isPagerScrollEnabled, setPagerScrollEnabled] = useState(true);
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-
-  const insets = useSafeAreaInsets();
 
   // 페이지 변경 이벤트
   const handlePageChange = useCallback(
