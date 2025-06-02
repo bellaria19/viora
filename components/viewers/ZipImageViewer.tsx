@@ -8,9 +8,10 @@ import ViewerLoading from './ViewerLoading';
 
 interface ZipImageViewerProps {
   uri: string;
+  title?: string;
 }
 
-export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
+export default function ZipImageViewer({ uri, title }: ZipImageViewerProps) {
   // 기본 상태 설정
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -278,5 +279,12 @@ export default function ZipImageViewer({ uri }: ZipImageViewerProps) {
     return <ViewerError message="표시할 이미지가 없습니다." />;
   }
 
-  return <ImageViewer uri={images} currentIndex={currentIndex} onIndexChange={handleIndexChange} />;
+  return (
+    <ImageViewer
+      uri={images}
+      title={title}
+      currentIndex={currentIndex}
+      onIndexChange={handleIndexChange}
+    />
+  );
 }

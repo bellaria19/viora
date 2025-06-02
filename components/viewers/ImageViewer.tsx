@@ -19,11 +19,12 @@ import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-nativ
 
 interface ImageViewerProps {
   uri: string | string[];
+  title?: string;
   currentIndex?: number;
   onIndexChange?: (index: number) => void;
 }
 
-export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageViewerProps) {
+export default function ImageViewer({ uri, title, currentIndex, onIndexChange }: ImageViewerProps) {
   const images = Array.isArray(uri) ? uri : [uri];
   const [internalIndex, setInternalIndex] = useState(0);
   const index = currentIndex !== undefined ? currentIndex : internalIndex;
@@ -276,6 +277,7 @@ export default function ImageViewer({ uri, currentIndex, onIndexChange }: ImageV
           </GestureDetector>
 
           <Overlay
+            title={title}
             visible={overlayVisible}
             onSettings={() => setSettingsVisible(true)}
             showSlider={images.length > 1}

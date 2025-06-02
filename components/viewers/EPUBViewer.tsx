@@ -16,9 +16,10 @@ type Location = {
 
 interface EPUBViewerProps {
   uri: string;
+  title?: string;
 }
 
-export default function EPUBViewer({ uri }: EPUBViewerProps) {
+export default function EPUBViewer({ uri, title }: EPUBViewerProps) {
   const { width, height } = useWindowDimensions();
   const [isLoading, setIsLoading] = useState(true);
   const [overlayVisible, setOverlayVisible] = useState(false);
@@ -92,6 +93,7 @@ export default function EPUBViewer({ uri }: EPUBViewerProps) {
           />
 
           <Overlay
+            title={title}
             visible={overlayVisible}
             onSettings={() => setSettingsVisible(true)}
             showSlider={totalPages > 1}

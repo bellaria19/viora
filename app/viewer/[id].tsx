@@ -41,19 +41,19 @@ export default function ViewerScreen() {
   const renderContent = () => {
     switch (params.type) {
       case 'text':
-        return <TextViewer uri={params.uri} />;
+        return <TextViewer uri={params.uri} title={params.title} />;
 
       case 'image':
-        return <ImageViewer uri={params.uri} />;
+        return <ImageViewer uri={params.uri} title={params.title} />;
 
       case 'pdf':
-        return <PDFViewer uri={params.uri} />;
+        return <PDFViewer uri={params.uri} title={params.title} />;
 
       case 'epub':
-        return <EPUBViewer uri={params.uri} />;
+        return <EPUBViewer uri={params.uri} title={params.title} />;
 
       case 'zip':
-        return <ZipImageViewer uri={params.uri} />;
+        return <ZipImageViewer uri={params.uri} title={params.title} />;
 
       default:
         return <ViewerUnsupported />;

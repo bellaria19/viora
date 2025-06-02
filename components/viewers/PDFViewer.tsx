@@ -8,9 +8,10 @@ import Pdf from 'react-native-pdf';
 
 interface PDFViewerProps {
   uri: string;
+  title?: string;
 }
 
-export default function PDFViewer({ uri }: PDFViewerProps) {
+export default function PDFViewer({ uri, title }: PDFViewerProps) {
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -86,6 +87,7 @@ export default function PDFViewer({ uri }: PDFViewerProps) {
             showsVerticalScrollIndicator={false}
           />
           <Overlay
+            title={title}
             visible={overlayVisible}
             onSettings={() => setSettingsVisible(true)}
             showSlider={totalPages > 1}

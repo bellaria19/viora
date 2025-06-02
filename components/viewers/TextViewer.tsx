@@ -12,6 +12,7 @@ import { WebView } from 'react-native-webview';
 
 interface TextViewerProps {
   uri: string;
+  title?: string;
 }
 
 interface WebViewMessage {
@@ -20,7 +21,7 @@ interface WebViewMessage {
   message?: string;
 }
 
-export default function TextViewer({ uri }: TextViewerProps) {
+export default function TextViewer({ uri, title }: TextViewerProps) {
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
   );
 
   const { top: safeAreaTop, bottom: safeAreaBottom } = useSafeAreaInsets();
+
   // HTML 템플릿 생성
   const htmlContent = useMemo(() => {
     const escapedContent = content
@@ -141,14 +143,13 @@ export default function TextViewer({ uri }: TextViewerProps) {
         .page-mode #content {
             flex: 1;
             overflow: hidden;
-            display: flex;
-            align-items: flex-start;
-            padding-bottom: 40px; /* 페이지 번호 공간 */
+            padding-bottom: 60px; /* 페이지 번호 공간 확보 */
         }
         
         .page-content {
             width: 100%;
-            line-height: ${textViewerOptions.lineHeight};
+            height: 100%;
+            overflow: hidden;
         }
         
         .page-number {
@@ -180,7 +181,8 @@ export default function TextViewer({ uri }: TextViewerProps) {
             left: 0;
             width: 100%;
             visibility: hidden;
-            z-index: -1;
+            z-index: -1000;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -196,7 +198,19 @@ export default function TextViewer({ uri }: TextViewerProps) {
     
     <!-- 실제 렌더링 측정용 숨겨진 컨테이너 -->
     <div id="hiddenContainer" class="hidden-measure">
-        <div id="hiddenContent" style="padding: ${textViewerOptions.marginVertical}px ${textViewerOptions.marginHorizontal}px;">
+        <div id="hiddenContent" style="
+            padding: ${textViewerOptions.marginVertical}px ${textViewerOptions.marginHorizontal}px;
+            font-size: ${textViewerOptions.fontSize}px;
+            line-height: ${textViewerOptions.lineHeight};
+            font-family: ${
+              textViewerOptions.fontFamily === 'System'
+                ? '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui'
+                : textViewerOptions.fontFamily
+            };
+            font-weight: ${textViewerOptions.fontWeight};
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        ">
             ${escapedContent}
         </div>
     </div>
@@ -207,7 +221,6 @@ export default function TextViewer({ uri }: TextViewerProps) {
     let isPageMode = ${isPageMode};
     let pages = [];
     let originalContent = \`${escapedContent}\`;
-    let pageBreakPositions = [];
     
     // React Native로 메시지 전송
     function sendMessage(type, data = null, message = null) {
@@ -226,70 +239,57 @@ export default function TextViewer({ uri }: TextViewerProps) {
         sendMessage('log', null, message);
     }
     
-    // 스크롤 기반 페이지 분할 함수
-    function splitIntoPagesByScroll() {
+    // 문자열을 줄 단위로 나누는 함수
+    function splitTextIntoLines(text) {
+        return text.split('<br>');
+    }
+    
+    // 줄 높이 계산
+    function getLineHeight() {
+        return ${textViewerOptions.fontSize} * ${textViewerOptions.lineHeight};
+    }
+    
+    // 페이지당 줄 수 계산
+    function getLinesPerPage() {
+        // 컨테이너 높이에서 상하 여백과 페이지 번호 공간을 제외
+        const containerHeight = window.innerHeight;
+        const availableHeight = containerHeight - (${textViewerOptions.marginVertical} * 2) - 80; // 페이지 번호 공간 80px
+        const lineHeight = getLineHeight();
+        return Math.floor(availableHeight / lineHeight);
+    }
+    
+    // 텍스트를 페이지별로 분할하는 함수 (개선된 버전)
+    function splitIntoPages() {
         if (!isPageMode) {
             totalPages = 1;
             currentPage = 1;
+            pages = [originalContent];
             return;
         }
         
-        log('🔄 스크롤 기반 페이지 분할 시작');
+        log('🔄 텍스트 페이지 분할 시작');
         
-        // 측정용 컨테이너 설정
-        const hiddenContainer = document.getElementById('hiddenContainer');
-        const hiddenContent = document.getElementById('hiddenContent');
+        const lines = splitTextIntoLines(originalContent);
+        const linesPerPage = getLinesPerPage();
         
-        // 실제 스크롤 모드 스타일 적용
-        hiddenContainer.style.visibility = 'visible';
-        hiddenContainer.style.position = 'absolute';
-        hiddenContainer.style.top = '0';
-        hiddenContainer.style.left = '0';
-        hiddenContainer.style.width = '100%';
-        hiddenContainer.style.height = 'auto';
-        hiddenContainer.style.overflow = 'visible';
-        hiddenContainer.style.zIndex = '-1';
+        log(\`📏 총 줄 수: \${lines.length}\`);
+        log(\`📏 페이지당 줄 수: \${linesPerPage}\`);
         
-        // 페이지 높이 계산 (페이지 번호 공간 제외)
-        const pageHeight = window.innerHeight - ${textViewerOptions.marginVertical * 2} - 60;
-        
-        log(\`📏 페이지 높이: \${pageHeight}px\`);
-        
-        // 전체 컨텐츠의 실제 높이 측정
-        const contentHeight = hiddenContent.scrollHeight;
-        log(\`📏 전체 컨텐츠 높이: \${contentHeight}px\`);
-        
-        // 스크롤 위치 기반으로 페이지 분할점 계산
-        pageBreakPositions = [];
-        let currentScrollTop = 0;
-        
-        while (currentScrollTop < contentHeight) {
-            pageBreakPositions.push(currentScrollTop);
-            currentScrollTop += pageHeight;
-        }
-        
-        // 마지막 페이지 처리
-        if (pageBreakPositions[pageBreakPositions.length - 1] < contentHeight) {
-            pageBreakPositions.push(contentHeight);
-        }
-        
-        totalPages = Math.max(1, pageBreakPositions.length - 1);
-        
-        log(\`📄 총 페이지 수: \${totalPages}\`);
-        log(\`📍 페이지 분할점: \${pageBreakPositions.join(', ')}\`);
-        
-        // 각 페이지별 콘텐츠 생성
         pages = [];
-        for (let i = 0; i < totalPages; i++) {
-            const startPos = pageBreakPositions[i];
-            const endPos = pageBreakPositions[i + 1] || contentHeight;
-            
-            // 해당 페이지에 해당하는 콘텐츠 범위 계산
-            const pageContent = extractContentByScrollPosition(startPos, endPos, pageHeight);
+        let startLine = 0;
+        
+        while (startLine < lines.length) {
+            const endLine = Math.min(startLine + linesPerPage, lines.length);
+            const pageLines = lines.slice(startLine, endLine);
+            const pageContent = pageLines.join('<br>');
             pages.push(pageContent);
             
-            log(\`📄 페이지 \${i + 1}: \${startPos}-\${endPos}px (길이: \${pageContent.length})\`);
+            log(\`📄 페이지 \${pages.length}: 줄 \${startLine + 1}-\${endLine} (총 \${pageLines.length}줄)\`);
+            
+            startLine = endLine;
         }
+        
+        totalPages = Math.max(1, pages.length);
         
         // 현재 페이지가 범위를 벗어나면 조정
         if (currentPage > totalPages) {
@@ -299,89 +299,10 @@ export default function TextViewer({ uri }: TextViewerProps) {
             currentPage = 1;
         }
         
-        // 측정용 컨테이너 숨기기
-        hiddenContainer.style.visibility = 'hidden';
+        log(\`📄 총 페이지 수: \${totalPages}\`);
         
         sendMessage('totalPages', totalPages);
         updatePageDisplay();
-    }
-    
-    // 스크롤 위치에 따른 콘텐츠 추출
-    function extractContentByScrollPosition(startPos, endPos, pageHeight) {
-        const hiddenContent = document.getElementById('hiddenContent');
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = originalContent;
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.top = '0';
-        tempDiv.style.left = '0';
-        tempDiv.style.width = '100%';
-        tempDiv.style.visibility = 'hidden';
-        tempDiv.style.padding = \`\${${textViewerOptions.marginVertical}}px \${${textViewerOptions.marginHorizontal}}px\`;
-        tempDiv.style.fontSize = '${textViewerOptions.fontSize}px';
-        tempDiv.style.lineHeight = '${textViewerOptions.lineHeight}';
-        tempDiv.style.fontFamily = getComputedStyle(document.body).fontFamily;
-        tempDiv.style.fontWeight = '${textViewerOptions.fontWeight}';
-        tempDiv.style.whiteSpace = 'pre-wrap';
-        tempDiv.style.wordWrap = 'break-word';
-        
-        document.body.appendChild(tempDiv);
-        
-        try {
-            // 텍스트 노드들을 순회하면서 스크롤 위치에 맞는 부분 찾기
-            const walker = document.createTreeWalker(
-                tempDiv,
-                NodeFilter.SHOW_TEXT,
-                null,
-                false
-            );
-            
-            let accumulatedHeight = 0;
-            let pageStartFound = false;
-            let pageContent = '';
-            let node;
-            
-            while (node = walker.nextNode()) {
-                const textNode = node as Text;
-                const parentElement = textNode.parentElement;
-                
-                if (parentElement) {
-                    const rect = parentElement.getBoundingClientRect();
-                    const nodeHeight = rect.height;
-                    
-                    // 시작 위치 찾기
-                    if (!pageStartFound && accumulatedHeight + nodeHeight >= startPos) {
-                        pageStartFound = true;
-                    }
-                    
-                    // 페이지 내용 수집
-                    if (pageStartFound && accumulatedHeight < endPos) {
-                        pageContent += textNode.textContent || '';
-                        
-                        // 페이지 끝에 도달했으면 중단
-                        if (accumulatedHeight + nodeHeight >= endPos) {
-                            break;
-                        }
-                    }
-                    
-                    accumulatedHeight += nodeHeight;
-                }
-            }
-            
-            // 내용이 없으면 원본 내용의 일부를 추정으로 가져오기
-            if (!pageContent.trim()) {
-                const lines = originalContent.split('<br>');
-                const linesPerPage = Math.floor(pageHeight / (${textViewerOptions.fontSize} * ${textViewerOptions.lineHeight}));
-                const startLine = Math.floor(startPos / (${textViewerOptions.fontSize} * ${textViewerOptions.lineHeight}));
-                const endLine = Math.min(lines.length, startLine + linesPerPage);
-                
-                pageContent = lines.slice(startLine, endLine).join('<br>');
-            }
-            
-            return pageContent;
-            
-        } finally {
-            document.body.removeChild(tempDiv);
-        }
     }
     
     // 페이지 표시 업데이트
@@ -393,10 +314,11 @@ export default function TextViewer({ uri }: TextViewerProps) {
             if (pages.length > 0 && currentPage >= 1 && currentPage <= pages.length) {
                 const content = pages[currentPage - 1] || '';
                 pageContent.innerHTML = content;
-                log(\`📄 페이지 \${currentPage} 표시 (길이: \${content.length})\`);
+                log(\`📄 페이지 \${currentPage} 표시 (내용 길이: \${content.length})\`);
             } else {
-                pageContent.innerHTML = originalContent;
-                log(\`⚠️ 페이지 범위 오류, 전체 내용 표시\`);
+                // 페이지 범위를 벗어나면 빈 내용 표시
+                pageContent.innerHTML = '';
+                log(\`⚠️ 페이지 범위 오류: \${currentPage} (유효 범위: 1-\${totalPages})\`);
             }
             
             if (pageNumber) {
@@ -412,7 +334,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
     // 페이지 이동 함수
     function goToPage(page) {
         if (!isPageMode) {
-            log('⚠️ 페이지 모드가 아님, 이동 무시');
+            log('⚠️ 스크롤 모드에서는 페이지 이동 불가');
             return;
         }
         
@@ -456,7 +378,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
                 newPageNumber.id = 'pageNumber';
                 document.body.appendChild(newPageNumber);
             }
-            splitIntoPagesByScroll();
+            splitIntoPages();
         } else {
             body.className = 'scroll-mode';
             if (pageNumber) {
@@ -464,6 +386,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
             }
             totalPages = 1;
             currentPage = 1;
+            pages = [originalContent];
             updatePageDisplay();
             sendMessage('totalPages', 1);
             sendMessage('pageChange', 1);
@@ -553,7 +476,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         if (isPageMode && needsReflow) {
             log('⚡ 설정 변경으로 인한 페이지 재분할');
             setTimeout(() => {
-                splitIntoPagesByScroll();
+                splitIntoPages();
             }, 100);
         }
     }
@@ -597,7 +520,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
         if (isPageMode) {
             log('📱 화면 크기 변경, 페이지 재분할');
             setTimeout(() => {
-                splitIntoPagesByScroll();
+                splitIntoPages();
             }, 100);
         }
     });
@@ -614,7 +537,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
             log('📄 페이지 모드로 초기화');
             // DOM이 완전히 로드된 후 실행
             setTimeout(() => {
-                splitIntoPagesByScroll();
+                splitIntoPages();
             }, 100);
         } else {
             log('📜 스크롤 모드로 초기화');
@@ -653,8 +576,9 @@ export default function TextViewer({ uri }: TextViewerProps) {
         getTotalPages: () => totalPages,
         isPageMode: () => isPageMode,
         getPages: () => pages,
-        splitIntoPagesByScroll,
-        getPageBreakPositions: () => pageBreakPositions
+        splitIntoPages,
+        getLinesPerPage: getLinesPerPage,
+        getLineHeight: getLineHeight
     };
     </script>
 </body>
@@ -793,6 +717,7 @@ export default function TextViewer({ uri }: TextViewerProps) {
           )}
 
           <Overlay
+            title={title}
             visible={overlayVisible}
             onSettings={() => setSettingsVisible(true)}
             showSlider={isPageMode && totalPages > 1}

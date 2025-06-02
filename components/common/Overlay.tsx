@@ -5,6 +5,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface OverlayProps {
+  title?: string;
   visible: boolean;
   onSettings?: () => void;
   showSlider?: boolean;
@@ -14,6 +15,7 @@ interface OverlayProps {
 }
 
 export default function Overlay({
+  title,
   visible,
   onSettings,
   showSlider = false,
@@ -41,6 +43,7 @@ export default function Overlay({
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
           <FontAwesome6 name="chevron-left" size={28} color="#fff" />
         </TouchableOpacity>
+        {title && <Text style={styles.title}>{title}</Text>}
         <TouchableOpacity onPress={onSettings} style={styles.iconButton}>
           <FontAwesome6 name="gear" size={26} color="#fff" />
         </TouchableOpacity>
@@ -97,6 +100,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
     paddingBottom: 16,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   iconButton: {
     padding: 8,

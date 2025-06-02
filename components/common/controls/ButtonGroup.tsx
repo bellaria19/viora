@@ -24,7 +24,6 @@ export default memo(function ButtonGroup({
   style,
   fullWidth = false,
 }: ButtonGroupProps) {
-  // 고정된 사이즈 값 (small)
   const BUTTON_HEIGHT = 32;
   const FONT_SIZE = 12;
   const ICON_SIZE = 12;
